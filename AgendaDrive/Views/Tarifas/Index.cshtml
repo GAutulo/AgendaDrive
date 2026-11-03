@@ -1,0 +1,78 @@
+@model List<Tarifa>
+@{
+    ViewData["Title"] = "Tarifas";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">Tarifas</h1>
+    <a asp-action="Criar" class="btn btn-primary">Nova tarifa</a>
+</div>
+
+<p class="text-muted">
+    Só uma tarifa fica ativa por vez; é ela que calcula o preço das novas corridas.
+    Ao ativar uma tarifa, a anterior é desativada.
+</p>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info">Nenhuma tarifa cadastrada ainda.</div>
+}
+else
+{
+    @* As colunas menos importantes somem em telas pequenas (d-none d-md-table-cell). *@
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Situação</th>
+                    <th>Base</th>
+                    <th>Por km</th>
+                    <th class="d-none d-md-table-cell">Por minuto</th>
+                    <th class="d-none d-md-table-cell">Mínimo</th>
+                    <th class="d-none d-lg-table-cell">Partida</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var tarifa in Model)
+                {
+                    <tr>
+                        <td>
+                            @if (tarifa.Ativo)
+                            {
+                                <span class="badge text-bg-success">Ativa</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">Inativa</span>
+                            }
+                        </td>
+                        <td>@tarifa.TarifaBase.ToString("C")</td>
+                        <td>@tarifa.ValorKm.ToString("C")</td>
+                        <td class="d-none d-md-table-cell">@tarifa.ValorMinuto.ToString("C")</td>
+                        <td class="d-none d-md-table-cell">@tarifa.PrecoMinimo.ToString("C")</td>
+                        <td class="d-none d-lg-table-cell">@tarifa.BaseEndereco</td>
+                        <td class="text-end">
+                            <div class="d-inline-flex flex-wrap justify-content-end gap-1">
+                                <a asp-action="Detalhes" asp-route-id="@tarifa.ID" class="btn btn-sm btn-outline-secondary">Detalhes</a>
+                                @* Ativar e desativar mudam dados, por isso são POST (form com token), nunca um link GET. *@
+                                @if (tarifa.Ativo)
+                                {
+                                    <form asp-action="Desativar" asp-route-id="@tarifa.ID" method="post">
+                                        <button type="submit" class="btn btn-sm btn-outline-warning">Desativar</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form asp-action="Ativar" asp-route-id="@tarifa.ID" method="post">
+                                        <button type="submit" class="btn btn-sm btn-outline-success">Ativar</button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,69 @@
+@model Tarifa
+@{
+    ViewData["Title"] = "Detalhes da tarifa";
+    var quantidadeCorridas = (int)ViewBag.QuantidadeCorridas;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">
+        Tarifa nº @Model.ID
+        @if (Model.Ativo)
+        {
+            <span class="badge text-bg-success align-middle fs-6">Ativa</span>
+        }
+        else
+        {
+            <span class="badge text-bg-secondary align-middle fs-6">Inativa</span>
+        }
+    </h1>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">Valores</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-7">@Html.DisplayNameFor(m => m.TarifaBase)</dt>
+                    <dd class="col-5 text-end">@Model.TarifaBase.ToString("C")</dd>
+                    <dt class="col-7">@Html.DisplayNameFor(m => m.ValorKm)</dt>
+                    <dd class="col-5 text-end">@Model.ValorKm.ToString("C")</dd>
+                    <dt class="col-7">@Html.DisplayNameFor(m => m.ValorMinuto)</dt>
+                    <dd class="col-5 text-end">@Model.ValorMinuto.ToString("C")</dd>
+                    <dt class="col-7">@Html.DisplayNameFor(m => m.ValorKmDeslocamento)</dt>
+                    <dd class="col-5 text-end">@Model.ValorKmDeslocamento.ToString("C")</dd>
+                    <dt class="col-7">@Html.DisplayNameFor(m => m.PrecoMinimo)</dt>
+                    <dd class="col-5 text-end">@Model.PrecoMinimo.ToString("C")</dd>
+                    <dt class="col-7">@Html.DisplayNameFor(m => m.MargemSegurancaMin)</dt>
+                    <dd class="col-5 text-end mb-0">@Model.MargemSegurancaMin min</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">Ponto de partida</div>
+            <div class="card-body">
+                <p class="mb-2">@Model.BaseEndereco</p>
+                <p class="text-muted small mb-3">@Model.BaseLatitude.ToString("0.000000"), @Model.BaseLongitude.ToString("0.000000")</p>
+                <p class="small mb-0">
+                    Criada em @Model.CriadoEm.ToString("dd/MM/yyyy HH:mm").
+                    @(quantidadeCorridas == 0 ? "Ainda não foi usada em corridas." : $"Usada em {quantidadeCorridas} corrida(s).")
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mt-3">
+    <a asp-action="Index" class="btn btn-outline-secondary">Voltar</a>
+    @* Tarifa usada em corridas não pode ser editada nem excluída; a regra está na TarifaNegocio. *@
+    @if (quantidadeCorridas == 0)
+    {
+        <a asp-action="Editar" asp-route-id="@Model.ID" class="btn btn-primary">Editar</a>
+        @if (!Model.Ativo)
+        {
+            <a asp-action="Excluir" asp-route-id="@Model.ID" class="btn btn-outline-danger">Excluir</a>
+        }
+    }
+</div>

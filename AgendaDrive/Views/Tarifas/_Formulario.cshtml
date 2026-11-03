@@ -1,0 +1,67 @@
+@model Tarifa
+@* Campos do formulário de tarifa, usados por Criar e Editar (cada um coloca o seu <form> em volta).
+   asp-for liga o campo à propriedade da entidade: gera name, valor, rótulo ([Display]) e validação ([Required], [Range]). *@
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+<fieldset class="mb-4">
+    <legend class="h6 text-uppercase text-muted">Valores</legend>
+    <div class="row g-3">
+        <div class="col-6 col-md-4">
+            <label asp-for="TarifaBase" class="form-label"></label>
+            <input asp-for="TarifaBase" class="form-control" inputmode="decimal" />
+            <span asp-validation-for="TarifaBase" class="text-danger small"></span>
+        </div>
+        <div class="col-6 col-md-4">
+            <label asp-for="ValorKm" class="form-label"></label>
+            <input asp-for="ValorKm" class="form-control" inputmode="decimal" />
+            <span asp-validation-for="ValorKm" class="text-danger small"></span>
+        </div>
+        <div class="col-6 col-md-4">
+            <label asp-for="ValorMinuto" class="form-label"></label>
+            <input asp-for="ValorMinuto" class="form-control" inputmode="decimal" />
+            <span asp-validation-for="ValorMinuto" class="text-danger small"></span>
+        </div>
+        <div class="col-6 col-md-4">
+            <label asp-for="ValorKmDeslocamento" class="form-label"></label>
+            <input asp-for="ValorKmDeslocamento" class="form-control" inputmode="decimal" />
+            <span asp-validation-for="ValorKmDeslocamento" class="text-danger small"></span>
+        </div>
+        <div class="col-6 col-md-4">
+            <label asp-for="PrecoMinimo" class="form-label"></label>
+            <input asp-for="PrecoMinimo" class="form-control" inputmode="decimal" />
+            <span asp-validation-for="PrecoMinimo" class="text-danger small"></span>
+        </div>
+        <div class="col-6 col-md-4">
+            <label asp-for="MargemSegurancaMin" class="form-label"></label>
+            <input asp-for="MargemSegurancaMin" class="form-control" inputmode="numeric" />
+            <span asp-validation-for="MargemSegurancaMin" class="text-danger small"></span>
+        </div>
+    </div>
+    <div class="form-text">Use vírgula nos decimais (ex.: 2,50). A margem é o tempo livre reservado depois de cada corrida.</div>
+</fieldset>
+
+<fieldset class="mb-4">
+    <legend class="h6 text-uppercase text-muted">Ponto de partida do motorista</legend>
+    <div class="row g-3">
+        <div class="col-12">
+            <label asp-for="BaseEndereco" class="form-label"></label>
+            <input asp-for="BaseEndereco" class="form-control" />
+            <span asp-validation-for="BaseEndereco" class="text-danger small"></span>
+        </div>
+        <div class="col-6">
+            <label asp-for="BaseLatitude" class="form-label"></label>
+            <input asp-for="BaseLatitude" class="form-control" inputmode="decimal" />
+            <span asp-validation-for="BaseLatitude" class="text-danger small"></span>
+        </div>
+        <div class="col-6">
+            <label asp-for="BaseLongitude" class="form-label"></label>
+            <input asp-for="BaseLongitude" class="form-control" inputmode="decimal" />
+            <span asp-validation-for="BaseLongitude" class="text-danger small"></span>
+        </div>
+    </div>
+    <div class="form-text">
+        Por enquanto as coordenadas são digitadas (no Google Maps, clique com o botão direito no local e copie).
+        O deslocamento até a origem de cada corrida é calculado a partir deste ponto.
+    </div>
+</fieldset>

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "AgendaDrive",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "AgendaDrive/AgendaDrive.csproj", "--launch-profile", "http"],
+      "port": 5155
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+﻿<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+<script>
+    // O jQuery Validation espera números no formato americano (2.50). Aqui ele passa a aceitar o formato
+    // brasileiro (2,50), que é o que o servidor espera por estar configurado em pt-BR no Program.cs.
+    $.validator.methods.number = function (valor, campo) {
+        return this.optional(campo) || /^-?\d+(,\d+)?$/.test(valor);
+    };
+    $.validator.methods.range = function (valor, campo, limites) {
+        var numero = parseFloat(valor.replace(',', '.'));
+        return this.optional(campo) || (numero >= limites[0] && numero <= limites[1]);
+    };
+</script>

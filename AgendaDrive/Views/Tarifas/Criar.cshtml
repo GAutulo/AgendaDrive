@@ -1,0 +1,19 @@
+@model Tarifa
+@{
+    ViewData["Title"] = "Nova tarifa";
+}
+
+<h1 class="h3 mb-3">Nova tarifa</h1>
+
+@* asp-action gera o action do form; o tag helper <form> também inclui o token anti-falsificação automaticamente. *@
+<form asp-action="Criar" method="post">
+    <partial name="_Formulario" model="Model" />
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

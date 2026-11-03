@@ -1,0 +1,39 @@
+@model Tarifa
+@{
+    ViewData["Title"] = "Excluir tarifa";
+    var quantidadeCorridas = (int)ViewBag.QuantidadeCorridas;
+    var podeExcluir = !Model.Ativo && quantidadeCorridas == 0;
+}
+
+<h1 class="h3 mb-3">Excluir tarifa nº @Model.ID</h1>
+
+@if (podeExcluir)
+{
+    <div class="alert alert-warning">
+        A tarifa será apagada definitivamente. Isso não pode ser desfeito.
+        Se quiser só parar de usá-la, ela já está inativa e pode continuar no histórico.
+    </div>
+}
+else
+{
+    <div class="alert alert-danger">
+        @(Model.Ativo ? "Esta tarifa está ativa. Desative-a antes de excluir." : "Esta tarifa já foi usada em corridas e não pode ser excluída.")
+    </div>
+}
+
+<dl class="row">
+    <dt class="col-sm-4">@Html.DisplayNameFor(m => m.TarifaBase)</dt>
+    <dd class="col-sm-8">@Model.TarifaBase.ToString("C")</dd>
+    <dt class="col-sm-4">@Html.DisplayNameFor(m => m.ValorKm)</dt>
+    <dd class="col-sm-8">@Model.ValorKm.ToString("C")</dd>
+    <dt class="col-sm-4">@Html.DisplayNameFor(m => m.BaseEndereco)</dt>
+    <dd class="col-sm-8">@Model.BaseEndereco</dd>
+</dl>
+
+<form asp-action="Excluir" asp-route-id="@Model.ID" method="post" class="d-flex gap-2">
+    @if (podeExcluir)
+    {
+        <button type="submit" class="btn btn-danger">Excluir definitivamente</button>
+    }
+    <a asp-action="Detalhes" asp-route-id="@Model.ID" class="btn btn-outline-secondary">Cancelar</a>
+</form>
