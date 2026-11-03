@@ -486,3 +486,7 @@ $RECYCLE.BIN/
 **/App_Secrets/*
 !**/App_Secrets/secrets.exemplo.json
 **/App_Data/logs/
+
+# Publicacao: saida do dotnet publish e perfil do MonsterASP (contem a senha de publicacao)
+publicar/
+*.publishSettings

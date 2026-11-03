@@ -117,7 +117,7 @@ Antes de rodar o Scaffold, a connection string precisa estar acessível pela con
   - Tarifa usada em corridas não pode ser editada nem excluída (o motorista cria outra e ativa). Decisão a confirmar com o Guilherme.
   - Exclusão física só de tarifa inativa e nunca usada.
 - [x] Rodar o `database/script.sql` local (LocalDB) e testar o CRUD.
-- [ ] Criar a conta no MonsterASP.NET, criar o banco lá, rodar o script (pulando o `create database`/`use`), publicar (Web Deploy ou FTP), enviar o `App_Secrets/secrets.json` com a connection string de produção à mão e testar pelo link público.
+- [ ] Criar a conta no MonsterASP.NET, criar o banco lá, rodar o script (pulando o `create database`/`use`), publicar (Web Deploy ou FTP), enviar o `App_Secrets/secrets.json` com a connection string de produção à mão e testar pelo link público. Passo a passo em `docs/PUBLICACAO.md`.
 - [ ] 4ª medição: descomentar `[Authorize(Roles = "Administrador")]` no `TarifasController` quando existir login.
 
 ## Pendências de negócio
