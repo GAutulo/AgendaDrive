@@ -117,8 +117,13 @@ Antes de rodar o Scaffold, a connection string precisa estar acessível pela con
   - Tarifa usada em corridas não pode ser editada nem excluída (o motorista cria outra e ativa). Decisão a confirmar com o Guilherme.
   - Exclusão física só de tarifa inativa e nunca usada.
 - [x] Rodar o `database/script.sql` local (LocalDB) e testar o CRUD.
-- [ ] Criar a conta no MonsterASP.NET, criar o banco lá, rodar o script (pulando o `create database`/`use`), publicar (Web Deploy ou FTP), enviar o `App_Secrets/secrets.json` com a connection string de produção à mão e testar pelo link público. Passo a passo em `docs/PUBLICACAO.md`.
+- [x] Publicado em https://agendadrive.runasp.net (MonsterASP, banco `db77902`). Para republicar: `publicar-hospedagem.ps1`, com o perfil `.publishSettings` em Downloads. Script do banco foi rodado pelo "Run T-SQL" do painel, porque a conexão remota a partir deste computador falhou.
+- [x] HTTPS ativo (Let's Encrypt, renovação automática). O próprio app redireciona http para https.
 - [ ] 4ª medição: descomentar `[Authorize(Roles = "Administrador")]` no `TarifasController` quando existir login.
+
+## 4ª medição
+
+O Guilherme implementa o restante seguindo `docs/ROTEIRO.md`; as classes em `Models/Negocio` têm só assinaturas e TODOs. A IA explica, revisa e ajuda com erros, mas não preenche esses métodos nem gera os outros CRUDs.
 
 ## Pendências de negócio
 

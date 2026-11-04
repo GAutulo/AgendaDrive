@@ -113,7 +113,7 @@ A publicação cria um `web.config` com o `AspNetCoreModuleV2`. Ele **não** é 
 2. Pelo FileZilla ou pelo **WebFTP** do painel, crie a pasta `wwwroot/App_Secrets` no servidor e envie o arquivo para lá. O caminho final fica `wwwroot/App_Secrets/secrets.json`.
 3. **Reinicie o site** no painel (Stop → Start). A connection string é lida uma vez, quando o site sobe.
 
-> `App_Secrets` fica fora do `wwwroot` interno, então o site não serve esse arquivo: `https://seusite.runasp.net/App_Secrets/secrets.json` deve dar **404**.
+> `App_Secrets` fica fora do `wwwroot` interno, então o site não serve esse arquivo: `http://agendadrive.runasp.net/App_Secrets/secrets.json` responde **403**.
 > No computador isso já foi testado; teste também no servidor (passo 5).
 
 ## 5. Testar pelo link público
@@ -125,7 +125,8 @@ Abra `https://SEUSITE.runasp.net` e confira, de preferência também pelo celula
 - [ ] Criar uma tarifa com valores como `6,50`. Depois, em Detalhes, conferir que ficou R$ 6,50 e não R$ 650,00.
 - [ ] Ativar a nova tarifa: a antiga fica inativa. Reativar a antiga e excluir a nova.
 - [ ] Abrir um endereço que não existe (`/qualquercoisa`): aparece "Página não encontrada".
-- [ ] `/App_Secrets/secrets.json` e `/App_Data/logs/` dão 404.
+- [ ] `/App_Secrets/secrets.json` e `/App_Data/logs/` não abrem (403 ou 404).
+- [ ] Em **Websites → HTTPS**, o certificado grátis Let's Encrypt está ativo e `https://` abre o site. O site nasce "HTTP only".
 
 ### Testar o log de exceções no servidor (pedido da 3ª medição)
 
