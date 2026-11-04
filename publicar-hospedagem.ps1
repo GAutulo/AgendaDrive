@@ -5,13 +5,15 @@
 # Uso: powershell -ExecutionPolicy Bypass -File publicar-hospedagem.ps1
 #
 # A senha de publicacao fica so no arquivo .publishSettings e quem a usa e o msdeploy.
-# A connection string e pedida na hora e o arquivo temporario e apagado no fim.
+# A connection string e pedida so na primeira vez; o arquivo temporario e apagado no fim.
 # -SemEnviar monta o pacote e para antes do envio (serve para testar o script).
+# -TrocarConexao pede a connection string de novo (use se a senha do banco mudar).
 
 param(
     [string]$Perfil,
     [string]$ConnectionString,
-    [switch]$SemEnviar
+    [switch]$SemEnviar,
+    [switch]$TrocarConexao
 )
 
 $ErrorActionPreference = 'Stop'
@@ -40,9 +42,18 @@ $endereco = $dadosPerfil.destinationAppUrl
 Write-Host "Perfil: $(Split-Path $Perfil -Leaf)"
 Write-Host "Destino: $site ($endereco)"
 
-if (-not $ConnectionString) {
-    $seguro = Read-Host 'Cole a connection string LOCAL do painel (nao aparece na tela)' -AsSecureString
+# A connection string fica guardada criptografada para este usuario do Windows (DPAPI),
+# em App_Secrets, que esta no .gitignore. So e pedida na primeira vez ou com -TrocarConexao.
+$arquivoConexao = Join-Path $raiz 'AgendaDrive\App_Secrets\conexao-producao.txt'
+$seguroNovo = $null
+if (-not $ConnectionString -and -not $TrocarConexao -and (Test-Path $arquivoConexao)) {
+    $seguro = (Get-Content $arquivoConexao -Raw).Trim() | ConvertTo-SecureString
     $ConnectionString = (New-Object System.Net.NetworkCredential('', $seguro)).Password
+    Write-Host 'Usando a connection string guardada.'
+}
+if (-not $ConnectionString) {
+    $seguroNovo = Read-Host 'Cole a connection string LOCAL do painel (nao aparece na tela)' -AsSecureString
+    $ConnectionString = (New-Object System.Net.NetworkCredential('', $seguroNovo)).Password
 }
 if (-not $ConnectionString.Trim()) { throw 'Connection string vazia.' }
 
@@ -101,6 +112,11 @@ foreach ($tentativa in 1..6) {
         $campos = @{ Email = 'teste@example.invalid'; Senha = 'senha-invalida'; __RequestVerificationToken = $token }
         $resposta = Invoke-WebRequest $url -Method Post -Body $campos -WebSession $sessao -UseBasicParsing -TimeoutSec 60
         if ($resposta.Content -match 'incorretos') {
+            # So guarda depois do teste, para nao salvar uma connection string errada.
+            if ($seguroNovo) {
+                $seguroNovo | ConvertFrom-SecureString | Set-Content $arquivoConexao -Encoding ASCII
+                Write-Host 'Connection string guardada: nao sera mais pedida.'
+            }
             Write-Host "NO AR: $url" -ForegroundColor Green
             exit 0
         }
