@@ -31,7 +31,7 @@ public class ArquivoLog
 
             var texto = new StringBuilder()
                 .AppendLine("==================================================")
-                .AppendLine($"Data/hora: {DateTime.Now:yyyy-MM-dd HH:mm:ss}")
+                .AppendLine($"Data/hora: {Relogio.Agora:yyyy-MM-dd HH:mm:ss}")
                 .AppendLine($"Codigo:    {http?.TraceIdentifier ?? "-"}")
                 .AppendLine($"Usuario:   {LimparLinha(usuario)}")
                 .AppendLine($"URL:       {LimparLinha(url)}")
@@ -40,7 +40,7 @@ public class ArquivoLog
                 .AppendLine(excecao.ToString())
                 .ToString();
 
-            var arquivo = Path.Combine(_pasta, $"{DateTime.Now:yyyy-MM-dd}.log");
+            var arquivo = Path.Combine(_pasta, $"{Relogio.Agora:yyyy-MM-dd}.log");
 
             lock (Trava)
             {

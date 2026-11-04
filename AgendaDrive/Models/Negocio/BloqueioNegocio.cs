@@ -1,8 +1,9 @@
 using AgendaDrive.Models.Entidades;
+using Microsoft.EntityFrameworkCore;
 
 namespace AgendaDrive.Models.Negocio;
 
-// ESTRUTURA PARA O GUILHERME IMPLEMENTAR (RF13, RN16). É o CRUD mais parecido com o de Tarifas: bom para começar.
+// Períodos em que o motorista não aceita corridas (RF13, RN16).
 public class BloqueioNegocio
 {
     private readonly AgendaDriveContext _contexto;
@@ -14,34 +15,78 @@ public class BloqueioNegocio
         _agendaNegocio = agendaNegocio;
     }
 
-    // TODO: só os Ativos, ordenados por Inicio.
-    public Task<List<Bloqueio>> ListarAsync()
+    public async Task<List<Bloqueio>> ListarAsync()
     {
-        throw new NotImplementedException();
+        return await _contexto.Bloqueios
+            .AsNoTracking()
+            .Where(b => b.Ativo)
+            .OrderBy(b => b.Inicio)
+            .ToListAsync();
     }
 
-    public Task<Bloqueio?> ObterAsync(int id)
+    public async Task<Bloqueio?> ObterAsync(int id)
     {
-        throw new NotImplementedException();
+        return await _contexto.Bloqueios.AsNoTracking().FirstOrDefaultAsync(b => b.ID == id && b.Ativo);
     }
 
-    // TODO:
-    // - recusar se Fim <= Inicio;
-    // - RN16: recusar se o período sobrepõe corrida Confirmada (use o AgendaNegocio) e dizer o motivo.
-    public Task<string?> CriarAsync(Bloqueio bloqueio)
+    public async Task<string?> CriarAsync(Bloqueio dados)
     {
-        throw new NotImplementedException();
+        return await _agendaNegocio.ExecutarExclusivoAsync(async () =>
+        {
+            var erro = await ValidarAsync(dados);
+            if (erro != null)
+                return erro;
+
+            _contexto.Bloqueios.Add(new Bloqueio
+            {
+                Inicio = dados.Inicio,
+                Fim = dados.Fim,
+                MotivoPrivado = dados.MotivoPrivado,
+                Ativo = true
+            });
+            await _contexto.SaveChangesAsync();
+            return null;
+        });
     }
 
-    // TODO: mesmas validações do CriarAsync. Copie campo a campo, como a TarifaNegocio.AtualizarAsync.
-    public Task<string?> AtualizarAsync(Bloqueio dados)
+    public async Task<string?> AtualizarAsync(Bloqueio dados)
     {
-        throw new NotImplementedException();
+        return await _agendaNegocio.ExecutarExclusivoAsync(async () =>
+        {
+            var bloqueio = await _contexto.Bloqueios.FirstOrDefaultAsync(b => b.ID == dados.ID && b.Ativo);
+            if (bloqueio == null)
+                return "Bloqueio não encontrado.";
+
+            var erro = await ValidarAsync(dados);
+            if (erro != null)
+                return erro;
+
+            bloqueio.Inicio = dados.Inicio;
+            bloqueio.Fim = dados.Fim;
+            bloqueio.MotivoPrivado = dados.MotivoPrivado;
+            await _contexto.SaveChangesAsync();
+            return null;
+        });
     }
 
-    // TODO: exclusão lógica (Ativo = false), nunca Remove.
-    public Task<string?> CancelarAsync(int id)
+    // Exclusão lógica: o registro continua no banco, só deixa de bloquear a agenda.
+    public async Task<string?> CancelarAsync(int id)
     {
-        throw new NotImplementedException();
+        var alterados = await _contexto.Bloqueios
+            .Where(b => b.ID == id && b.Ativo)
+            .ExecuteUpdateAsync(s => s.SetProperty(b => b.Ativo, false));
+
+        return alterados == 0 ? "Bloqueio não encontrado." : null;
+    }
+
+    private async Task<string?> ValidarAsync(Bloqueio dados)
+    {
+        if (dados.Fim <= dados.Inicio)
+            return "O fim precisa ser depois do início.";
+
+        if (await _agendaNegocio.ExisteCorridaConfirmadaAsync(dados.Inicio, dados.Fim))
+            return "Já existe corrida confirmada nesse período. Cancele a corrida antes de bloquear o horário.";
+
+        return null;
     }
 }

@@ -1,13 +1,13 @@
 using AgendaDrive.Models.Entidades;
 using AgendaDrive.Models.Negocio;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AgendaDrive.Controllers;
 
 // CRUD de Tarifas (área do motorista). O Controller só recebe a requisição, chama a TarifaNegocio
 // e escolhe a View; nenhuma regra e nenhum acesso ao banco ficam aqui.
-// TODO (4a medição, quando existir o login): descomentar a linha abaixo para só o motorista entrar.
-// [Authorize(Roles = "Administrador")]
+[Authorize(Roles = "Administrador")]
 public class TarifasController : Controller
 {
     // Campos que o formulário pode enviar. Ativo, CriadoEm e ID ficam de fora de propósito (proteção contra overposting).

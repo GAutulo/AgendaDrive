@@ -9,5 +9,17 @@
         O cliente informa origem e destino, vê a rota no mapa e recebe uma estimativa de preço.
         O motorista aprova as solicitações, organiza a agenda e configura as tarifas.
     </p>
-    <a class="btn btn-primary" asp-controller="Tarifas" asp-action="Index">Gerenciar tarifas</a>
+    @if (User.IsInRole("Administrador"))
+    {
+        <a class="btn btn-primary" asp-controller="Corridas" asp-action="Solicitacoes">Ver solicitações</a>
+    }
+    else if (User.Identity?.IsAuthenticated == true)
+    {
+        <a class="btn btn-primary" asp-controller="Corridas" asp-action="Nova">Solicitar corrida</a>
+    }
+    else
+    {
+        <a class="btn btn-primary" asp-controller="Conta" asp-action="Entrar">Entrar</a>
+        <a class="btn btn-outline-primary" asp-controller="Conta" asp-action="Cadastrar">Criar conta</a>
+    }
 </div>

@@ -55,6 +55,26 @@ public class TarifaNegocio
         await _contexto.SaveChangesAsync();
     }
 
+    // Usado pela API: em vez de alterar a tarifa ativa, cria outra com os novos valores e a ativa (RN02).
+    public async Task<string?> SubstituirAtivaAsync(Tarifa dados)
+    {
+        var nova = new Tarifa
+        {
+            TarifaBase = dados.TarifaBase,
+            ValorKm = dados.ValorKm,
+            ValorMinuto = dados.ValorMinuto,
+            ValorKmDeslocamento = dados.ValorKmDeslocamento,
+            PrecoMinimo = dados.PrecoMinimo,
+            MargemSegurancaMin = dados.MargemSegurancaMin,
+            BaseEndereco = dados.BaseEndereco,
+            BaseLatitude = dados.BaseLatitude,
+            BaseLongitude = dados.BaseLongitude
+        };
+
+        await CriarAsync(nova);
+        return await AtivarAsync(nova.ID);
+    }
+
     // Uma tarifa que já foi usada em corridas não muda: cada corrida aponta para a tarifa com que foi calculada.
     // Para mudar valores, o motorista cria uma nova tarifa e a ativa.
     public async Task<string?> AtualizarAsync(Tarifa dados)

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/AgendaDrive.styles.css" asp-append-version="true" />
+    @await RenderSectionAsync("Estilos", required: false)
 </head>
 <body>
     <header>
@@ -23,9 +24,47 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="Index">Início</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Tarifas" asp-action="Index">Tarifas</a>
-                        </li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Corridas" asp-action="Nova">Nova corrida</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Corridas" asp-action="Minhas">Minhas corridas</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Administrador"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Corridas" asp-action="Solicitacoes">Solicitações</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Bloqueios" asp-action="Index">Bloqueios</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Tarifas" asp-action="Index">Tarifas</a>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="navbar-nav align-items-sm-center">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item navbar-text me-sm-2">@User.Identity.Name</li>
+                            <li class="nav-item">
+                                <form asp-controller="Conta" asp-action="Sair" method="post">
+                                    <button type="submit" class="btn btn-sm btn-outline-light">Sair</button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Conta" asp-action="Entrar">Entrar</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Conta" asp-action="Cadastrar">Criar conta</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>

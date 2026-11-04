@@ -490,3 +490,6 @@ $RECYCLE.BIN/
 # Publicacao: saida do dotnet publish e perfil do MonsterASP (contem a senha de publicacao)
 publicar/
 *.publishSettings
+
+# Chaves que assinam cookies e tokens
+**/App_Data/keys/

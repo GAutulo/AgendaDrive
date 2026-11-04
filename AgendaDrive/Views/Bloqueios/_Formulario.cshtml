@@ -1,0 +1,21 @@
+@model Bloqueio
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <label asp-for="Inicio" class="form-label"></label>
+        <input asp-for="Inicio" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+        <span asp-validation-for="Inicio" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Fim" class="form-label"></label>
+        <input asp-for="Fim" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+        <span asp-validation-for="Fim" class="text-danger small"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="MotivoPrivado" class="form-label"></label>
+        <input asp-for="MotivoPrivado" class="form-control" />
+        <span asp-validation-for="MotivoPrivado" class="text-danger small"></span>
+    </div>
+</div>

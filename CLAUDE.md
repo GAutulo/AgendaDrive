@@ -119,11 +119,10 @@ Antes de rodar o Scaffold, a connection string precisa estar acessível pela con
 - [x] Rodar o `database/script.sql` local (LocalDB) e testar o CRUD.
 - [x] Publicado em https://agendadrive.runasp.net (MonsterASP, banco `db77902`). Para republicar: `publicar-hospedagem.ps1`, com o perfil `.publishSettings` em Downloads. Script do banco foi rodado pelo "Run T-SQL" do painel, porque a conexão remota a partir deste computador falhou.
 - [x] HTTPS ativo (Let's Encrypt, renovação automática). O próprio app redireciona http para https.
-- [ ] 4ª medição: descomentar `[Authorize(Roles = "Administrador")]` no `TarifasController` quando existir login.
 
 ## 4ª medição
 
-O Guilherme implementa o restante seguindo `docs/ROTEIRO.md`; as classes em `Models/Negocio` têm só assinaturas e TODOs. A IA explica, revisa e ajuda com erros, mas não preenche esses métodos nem gera os outros CRUDs.
+Em 04/11 o professor autorizou, por WhatsApp, o Guilherme a se basear em código gerado por IA, depois abrir outra sessão corrigindo os erros e enviar essa sessão a ele. Com isso, o restante do sistema foi escrito na branch `4a-medicao`, e o Guilherme informou que está confirmado com o professor: o limite de 50% não vale para esta base, porque o projeto será refeito por ele depois. O que falta e o que estudar estão em `docs/ROTEIRO.md`.
 
 ## Pendências de negócio
 

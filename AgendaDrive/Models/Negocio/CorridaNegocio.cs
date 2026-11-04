@@ -1,12 +1,23 @@
+using AgendaDrive.Infra;
 using AgendaDrive.Models.Entidades;
+using AgendaDrive.Models.Negocio.Rotas;
+using Microsoft.EntityFrameworkCore;
 
 namespace AgendaDrive.Models.Negocio;
 
-// ESTRUTURA PARA O GUILHERME IMPLEMENTAR (RF10 a RF16, RN06, RN10, RN12, RN13, RN18).
-// Transições válidas: Pendente -> Confirmada, Recusada, Cancelada; Confirmada -> Concluida, Cancelada.
-// Recusada, Cancelada e Concluida são finais. Toda mudança grava um HistoricoStatus.
+// Ciclo de vida da corrida (RF10 a RF16, RN06, RN10, RN12, RN13, RN17, RN18).
 public class CorridaNegocio
 {
+    // Transições válidas. Recusada, Cancelada e Concluida são finais.
+    private static readonly Dictionary<string, string[]> Transicoes = new()
+    {
+        ["Pendente"] = ["Confirmada", "Recusada", "Cancelada"],
+        ["Confirmada"] = ["Concluida", "Cancelada"]
+    };
+
+    public static readonly string[] Status = ["Pendente", "Confirmada", "Recusada", "Cancelada", "Concluida"];
+    public static readonly string[] TiposItem = ["Pedagio", "Estacionamento", "Espera", "RetornoVazio", "Outro"];
+
     private readonly AgendaDriveContext _contexto;
     private readonly AgendaNegocio _agendaNegocio;
     private readonly PrecoNegocio _precoNegocio;
@@ -18,69 +29,214 @@ public class CorridaNegocio
         _precoNegocio = precoNegocio;
     }
 
-    // TODO:
-    // - RN06: chamar _precoNegocio.CotarAsync de novo; nunca aceitar preço, km ou minutos do navegador;
-    // - recusar DataHora no passado;
-    // - RN12: conferir a agenda com PeriodoLivreAsync;
-    // - gravar Status "Pendente", IDTarifa e os valores da cotação (RN10);
-    // - gravar o primeiro HistoricoStatus (StatusAnterior = null) no mesmo SaveChanges.
-    public Task<string?> SolicitarAsync(Corrida dados, int idUsuario)
+    // Recebe só o que o cliente informa. Rota, preço e tarifa são sempre recalculados aqui (RN06);
+    // assim, alterar o preço no navegador não muda nada. Os valores ficam gravados na corrida (RN10).
+    public async Task<string?> SolicitarAsync(Corrida dados, int idUsuario)
     {
-        throw new NotImplementedException();
+        if (dados.DataHora <= Relogio.Agora)
+            return "Escolha uma data e hora no futuro.";
+
+        var cotacao = await _precoNegocio.CotarAsync(
+            new Coordenada(dados.OrigemLatitude, dados.OrigemLongitude),
+            new Coordenada(dados.DestinoLatitude, dados.DestinoLongitude));
+
+        if (cotacao == null)
+            return "Não foi possível calcular a rota agora. Confira os endereços ou tente novamente.";
+
+        var tarifa = await _contexto.Tarifas.AsNoTracking().FirstAsync(t => t.ID == cotacao.IDTarifa);
+        var fim = AgendaNegocio.CalcularFim(dados.DataHora, cotacao.DuracaoMin, tarifa.MargemSegurancaMin);
+
+        if (!await _agendaNegocio.PeriodoLivreAsync(dados.DataHora, fim))
+            return "Este horário não está disponível. Escolha outro.";
+
+        var corrida = new Corrida
+        {
+            IDUsuario = idUsuario,
+            IDTarifa = cotacao.IDTarifa,
+            Origem = dados.Origem,
+            OrigemLatitude = dados.OrigemLatitude,
+            OrigemLongitude = dados.OrigemLongitude,
+            Destino = dados.Destino,
+            DestinoLatitude = dados.DestinoLatitude,
+            DestinoLongitude = dados.DestinoLongitude,
+            DataHora = dados.DataHora,
+            DuracaoMin = cotacao.DuracaoMin,
+            DistanciaKm = cotacao.DistanciaKm,
+            DeslocamentoKm = cotacao.DeslocamentoKm,
+            Intermunicipal = dados.Intermunicipal,
+            PrecoEstimado = cotacao.PrecoEstimado,
+            Observacoes = dados.Observacoes,
+            CriadoEm = Relogio.Agora
+        };
+        corrida.HistoricosStatus.Add(NovoHistorico(null, "Pendente", idUsuario));
+
+        _contexto.Corridas.Add(corrida);
+        await _contexto.SaveChangesAsync();
+        return null;
     }
 
-    // TODO: RN18: filtrar por idUsuario. Traga Tarifa e ItensAdicionais só se a tela usar.
-    public Task<List<Corrida>> ListarDoClienteAsync(int idUsuario)
+    public async Task<List<Corrida>> ListarDoClienteAsync(int idUsuario)
     {
-        throw new NotImplementedException();
+        return await _contexto.Corridas
+            .AsNoTracking()
+            .Where(c => c.IDUsuario == idUsuario)
+            .OrderByDescending(c => c.DataHora)
+            .ToListAsync();
     }
 
-    // TODO: visão do motorista, com filtros opcionais por status e período (RF18).
-    public Task<List<Corrida>> ListarAsync(string? status, DateTime? inicio, DateTime? fim)
+    // Visão do motorista, também usada como relatório por período (RF18).
+    public async Task<List<Corrida>> ListarAsync(string? status, DateTime? inicio, DateTime? fim)
     {
-        throw new NotImplementedException();
+        var consulta = _contexto.Corridas.AsNoTracking().Include(c => c.Usuario).AsQueryable();
+
+        if (!string.IsNullOrEmpty(status))
+            consulta = consulta.Where(c => c.Status == status);
+        if (inicio != null)
+            consulta = consulta.Where(c => c.DataHora >= inicio);
+        if (fim != null)
+            consulta = consulta.Where(c => c.DataHora < fim.Value.AddDays(1));
+
+        return await consulta.OrderBy(c => c.DataHora).ToListAsync();
     }
 
-    // TODO: RN18: se idUsuario vier preenchido, só devolve a corrida se for dele (null = não encontrada).
-    public Task<Corrida?> ObterAsync(int id, int? idUsuario)
+    // Com idUsuario preenchido, só devolve se a corrida for dele: outra pessoa recebe "não encontrada" (RN18).
+    public async Task<Corrida?> ObterAsync(int id, int? idUsuario)
     {
-        throw new NotImplementedException();
+        return await _contexto.Corridas
+            .AsNoTracking()
+            .Include(c => c.Usuario)
+            .Include(c => c.ItensAdicionais)
+            .Include(c => c.HistoricosStatus.OrderBy(h => h.DataHora)).ThenInclude(h => h.Usuario)
+            .FirstOrDefaultAsync(c => c.ID == id && (idUsuario == null || c.IDUsuario == idUsuario));
     }
 
-    // TODO:
-    // - só de Pendente;
-    // - RN12/RN13: revalidar a agenda E confirmar dentro de uma transação Serializable, como a
-    //   TarifaNegocio.AtivarAsync; é o que garante "dois clientes, mesmo horário, só uma confirmada".
-    public Task<string?> AprovarAsync(int id, int idMotorista)
+    // Revalida a agenda e confirma numa transação exclusiva (RN12, RN13):
+    // de dois pedidos para o mesmo horário, só o primeiro a ser aprovado passa.
+    public async Task<string?> AprovarAsync(int id, int idMotorista)
     {
-        throw new NotImplementedException();
+        return await _agendaNegocio.ExecutarExclusivoAsync(async () =>
+        {
+            var corrida = await _contexto.Corridas.Include(c => c.Tarifa).FirstOrDefaultAsync(c => c.ID == id);
+            if (corrida == null)
+                return "Corrida não encontrada.";
+
+            var fim = AgendaNegocio.CalcularFim(corrida.DataHora, corrida.DuracaoMin, corrida.Tarifa.MargemSegurancaMin);
+            if (corrida.Status == "Pendente" && !await _agendaNegocio.PeriodoLivreAsync(corrida.DataHora, fim, corrida.ID))
+                return "O horário desta corrida não está mais livre. Recuse a solicitação.";
+
+            var erro = MudarStatus(corrida, "Confirmada", idMotorista);
+            if (erro != null)
+                return erro;
+
+            await _contexto.SaveChangesAsync();
+            return null;
+        });
     }
 
-    // TODO: só de Pendente.
-    public Task<string?> RecusarAsync(int id, int idMotorista)
+    public Task<string?> RecusarAsync(int id, int idMotorista) => AlterarStatusAsync(id, "Recusada", idMotorista);
+
+    public Task<string?> ConcluirAsync(int id, int idMotorista) => AlterarStatusAsync(id, "Concluida", idMotorista);
+
+    // O cliente só cancela a própria corrida (RN18); o motorista cancela qualquer uma.
+    // A antecedência mínima depende da política de cancelamento, que ainda é uma pendência de negócio.
+    public async Task<string?> CancelarAsync(int id, int idUsuario, bool ehMotorista)
     {
-        throw new NotImplementedException();
+        var corrida = await _contexto.Corridas.FirstOrDefaultAsync(c => c.ID == id && (ehMotorista || c.IDUsuario == idUsuario));
+        if (corrida == null)
+            return "Corrida não encontrada.";
+
+        var erro = MudarStatus(corrida, "Cancelada", idUsuario);
+        if (erro != null)
+            return erro;
+
+        await _contexto.SaveChangesAsync();
+        return null;
     }
 
-    // TODO:
-    // - de Pendente ou Confirmada;
-    // - o cliente só cancela a própria corrida (RN18), o motorista cancela qualquer uma;
-    // - antecedência mínima: depende da sua política de cancelamento (pendência de negócio).
-    public Task<string?> CancelarAsync(int id, int idUsuario, bool ehMotorista)
+    // Pedágio, espera, retorno vazio etc. (RN08, RN09). Só o que está incluso entra no preço.
+    public async Task<string?> AdicionarItemAsync(ItemAdicional item)
     {
-        throw new NotImplementedException();
+        if (!TiposItem.Contains(item.Tipo))
+            return "Tipo de item inválido.";
+
+        var corrida = await ObterParaItensAsync(item.IDCorrida);
+        if (corrida == null)
+            return "Só é possível alterar itens de corridas pendentes ou confirmadas.";
+
+        corrida.ItensAdicionais.Add(new ItemAdicional
+        {
+            Tipo = item.Tipo,
+            Descricao = item.Descricao,
+            Valor = item.Valor,
+            Incluso = item.Incluso
+        });
+        RecalcularPreco(corrida);
+        await _contexto.SaveChangesAsync();
+        return null;
     }
 
-    // TODO: só de Confirmada.
-    public Task<string?> ConcluirAsync(int id, int idMotorista)
+    public async Task<string?> RemoverItemAsync(int idCorrida, int idItem)
     {
-        throw new NotImplementedException();
+        var corrida = await ObterParaItensAsync(idCorrida);
+        var item = corrida?.ItensAdicionais.FirstOrDefault(i => i.ID == idItem);
+        if (corrida == null || item == null)
+            return "Item não encontrado nesta corrida.";
+
+        corrida.ItensAdicionais.Remove(item);
+        _contexto.ItensAdicionais.Remove(item);
+        RecalcularPreco(corrida);
+        await _contexto.SaveChangesAsync();
+        return null;
     }
 
-    // TODO: método privado único usado por todas as mudanças acima: confere a transição,
-    // muda o Status e adiciona o HistoricoStatus. Evita repetir a regra cinco vezes.
-    private void MudarStatus(Corrida corrida, string statusNovo, int idUsuario)
+    private async Task<string?> AlterarStatusAsync(int id, string statusNovo, int idUsuario)
     {
-        throw new NotImplementedException();
+        var corrida = await _contexto.Corridas.FirstOrDefaultAsync(c => c.ID == id);
+        if (corrida == null)
+            return "Corrida não encontrada.";
+
+        var erro = MudarStatus(corrida, statusNovo, idUsuario);
+        if (erro != null)
+            return erro;
+
+        await _contexto.SaveChangesAsync();
+        return null;
+    }
+
+    // Único lugar que muda o status: confere a transição e registra o histórico.
+    private string? MudarStatus(Corrida corrida, string statusNovo, int idUsuario)
+    {
+        if (!Transicoes.TryGetValue(corrida.Status, out var permitidos) || !permitidos.Contains(statusNovo))
+            return $"Uma corrida {corrida.Status} não pode passar para {statusNovo}.";
+
+        var historico = NovoHistorico(corrida.Status, statusNovo, idUsuario);
+        historico.IDCorrida = corrida.ID;
+        _contexto.HistoricosStatus.Add(historico);
+
+        corrida.Status = statusNovo;
+        return null;
+    }
+
+    private static HistoricoStatus NovoHistorico(string? anterior, string novo, int idUsuario) => new()
+    {
+        IDUsuario = idUsuario,
+        StatusAnterior = anterior,
+        StatusNovo = novo,
+        DataHora = Relogio.Agora
+    };
+
+    private async Task<Corrida?> ObterParaItensAsync(int idCorrida)
+    {
+        return await _contexto.Corridas
+            .Include(c => c.Tarifa)
+            .Include(c => c.ItensAdicionais)
+            .FirstOrDefaultAsync(c => c.ID == idCorrida && (c.Status == "Pendente" || c.Status == "Confirmada"));
+    }
+
+    // Usa a tarifa gravada na corrida: mudar a tarifa ativa não altera corridas já solicitadas (RN02).
+    private static void RecalcularPreco(Corrida corrida)
+    {
+        var extras = corrida.ItensAdicionais.Where(i => i.Incluso).Sum(i => i.Valor);
+        corrida.PrecoEstimado = PrecoNegocio.CalcularPreco(corrida.Tarifa, corrida.DistanciaKm, corrida.DuracaoMin, corrida.DeslocamentoKm, extras);
     }
 }

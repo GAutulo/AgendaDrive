@@ -1,8 +1,14 @@
 using System.Globalization;
+using System.Threading.RateLimiting;
 using AgendaDrive.Infra;
 using AgendaDrive.Models.Entidades;
 using AgendaDrive.Models.Negocio;
+using AgendaDrive.Models.Negocio.Rotas;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,6 +45,44 @@ builder.Services.AddDbContext<AgendaDriveContext>(opcoes =>
 
 // Classes de negócio: uma por requisição, recebendo o context.
 builder.Services.AddScoped<TarifaNegocio>();
+builder.Services.AddScoped<UsuarioNegocio>();
+builder.Services.AddScoped<AgendaNegocio>();
+builder.Services.AddScoped<BloqueioNegocio>();
+builder.Services.AddScoped<PrecoNegocio>();
+builder.Services.AddScoped<CorridaNegocio>();
+
+// Serviço de rotas: AddHttpClient entrega um HttpClient pronto para a classe que implementa a interface.
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<IRotaServico, OpenRouteServiceRotaServico>();
+
+// Login por cookie. Quem chama a API sem permissão recebe 401/403, não um redirecionamento para a tela de login.
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(opcoes =>
+    {
+        opcoes.LoginPath = "/Conta/Entrar";
+        opcoes.AccessDeniedPath = "/Conta/AcessoNegado";
+        opcoes.ExpireTimeSpan = TimeSpan.FromHours(8);
+        opcoes.SlidingExpiration = true;
+        opcoes.Cookie.HttpOnly = true;
+        opcoes.Cookie.SameSite = SameSiteMode.Lax;
+        opcoes.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        opcoes.Events.OnRedirectToLogin = contexto => ResponderApiOuRedirecionar(contexto, StatusCodes.Status401Unauthorized);
+        opcoes.Events.OnRedirectToAccessDenied = contexto => ResponderApiOuRedirecionar(contexto, StatusCodes.Status403Forbidden);
+    });
+
+// Guarda as chaves que assinam cookies e tokens em App_Data (fora do wwwroot).
+// Sem isso, cada reinício do site na hospedagem derrubaria o login de todo mundo.
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "App_Data", "keys")));
+
+// Freia tentativas de adivinhar senha: no máximo 10 envios de login/cadastro por minuto por IP.
+builder.Services.AddRateLimiter(opcoes =>
+{
+    opcoes.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    opcoes.AddPolicy("login", contexto => RateLimitPartition.GetFixedWindowLimiter(
+        contexto.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
+});
 
 // Log de exceções em App_Data/logs.
 builder.Services.AddSingleton<ArquivoLog>();
@@ -83,6 +127,10 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 
 app.UseRouting();
 
+app.UseRateLimiter();
+
+// Primeiro descobre quem é o usuário (cookie), depois confere se ele pode entrar ([Authorize]).
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
@@ -93,3 +141,13 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.Run();
+
+static Task ResponderApiOuRedirecionar(RedirectContext<CookieAuthenticationOptions> contexto, int statusApi)
+{
+    if (contexto.Request.Path.StartsWithSegments("/api"))
+        contexto.Response.StatusCode = statusApi;
+    else
+        contexto.Response.Redirect(contexto.RedirectUri);
+
+    return Task.CompletedTask;
+}

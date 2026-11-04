@@ -1,0 +1,13 @@
+@model string
+@{
+    var (cor, texto) = Model switch
+    {
+        "Pendente" => ("text-bg-warning", "Pendente"),
+        "Confirmada" => ("text-bg-success", "Confirmada"),
+        "Recusada" => ("text-bg-danger", "Recusada"),
+        "Cancelada" => ("text-bg-secondary", "Cancelada"),
+        "Concluida" => ("text-bg-primary", "Concluída"),
+        _ => ("text-bg-light", Model)
+    };
+}
+<span class="badge @cor">@texto</span>

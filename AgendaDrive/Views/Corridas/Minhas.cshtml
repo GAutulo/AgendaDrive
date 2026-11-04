@@ -1,0 +1,30 @@
+@model List<Corrida>
+@{
+    ViewData["Title"] = "Minhas corridas";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">Minhas corridas</h1>
+    <a asp-action="Nova" class="btn btn-primary">Nova corrida</a>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info">Você ainda não solicitou nenhuma corrida.</div>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var corrida in Model)
+        {
+            <a asp-action="Detalhes" asp-route-id="@corrida.ID" class="list-group-item list-group-item-action">
+                <div class="d-flex justify-content-between gap-2">
+                    <strong>@corrida.DataHora.ToString("dd/MM/yyyy HH:mm")</strong>
+                    <partial name="_Status" model="corrida.Status" />
+                </div>
+                <div class="small text-muted">@corrida.Origem → @corrida.Destino</div>
+                <div>@corrida.PrecoEstimado.ToString("C")</div>
+            </a>
+        }
+    </div>
+}

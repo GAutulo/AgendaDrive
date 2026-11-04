@@ -1,0 +1,164 @@
+@using System.Globalization
+@using AgendaDrive.Infra
+@using AgendaDrive.Models.Negocio
+@model Corrida
+@{
+    ViewData["Title"] = $"Corrida nº {Model.ID}";
+    var ehMotorista = User.EhMotorista();
+    var aberta = Model.Status is "Pendente" or "Confirmada";
+    string Numero(decimal valor) => valor.ToString(CultureInfo.InvariantCulture);
+    string Waze(decimal latitude, decimal longitude) =>
+        $"https://www.waze.com/ul?ll={Numero(latitude)}%2C{Numero(longitude)}&navigate=yes";
+}
+
+@section Estilos {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">Corrida nº @Model.ID <partial name="_Status" model="Model.Status" /></h1>
+    <a asp-action="@(ehMotorista ? "Solicitacoes" : "Minhas")" class="btn btn-outline-secondary">Voltar</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card mb-3">
+            <div class="card-body">
+                <dl class="mb-0">
+                    <dt>Data e hora</dt>
+                    <dd>@Model.DataHora.ToString("dd/MM/yyyy HH:mm")</dd>
+                    <dt>Origem</dt>
+                    <dd>@Model.Origem</dd>
+                    <dt>Destino</dt>
+                    <dd>@Model.Destino</dd>
+                    <dt>Trajeto</dt>
+                    <dd>@Model.DistanciaKm.ToString("0.##") km, cerca de @Model.DuracaoMin min@(Model.Intermunicipal ? " (outra cidade)" : "")</dd>
+                    <dt>Preço estimado</dt>
+                    <dd class="fs-5 mb-0">@Model.PrecoEstimado.ToString("C")</dd>
+                    @if (!string.IsNullOrEmpty(Model.Observacoes))
+                    {
+                        <dt class="mt-2">Observações</dt>
+                        <dd class="mb-0">@Model.Observacoes</dd>
+                    }
+                    @if (ehMotorista)
+                    {
+                        <dt class="mt-2">Cliente</dt>
+                        <dd class="mb-0">@Model.Usuario.Nome @(Model.Usuario.Telefone is null ? "" : $"· {Model.Usuario.Telefone}")</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+
+        @if (aberta)
+        {
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                @if (ehMotorista && Model.Status == "Pendente")
+                {
+                    <form asp-action="Aprovar" asp-route-id="@Model.ID" method="post">
+                        <button type="submit" class="btn btn-success">Aprovar</button>
+                    </form>
+                    <form asp-action="Recusar" asp-route-id="@Model.ID" method="post">
+                        <button type="submit" class="btn btn-outline-danger">Recusar</button>
+                    </form>
+                }
+                @if (ehMotorista && Model.Status == "Confirmada")
+                {
+                    <form asp-action="Concluir" asp-route-id="@Model.ID" method="post">
+                        <button type="submit" class="btn btn-primary">Concluir</button>
+                    </form>
+                }
+                @if (ehMotorista)
+                {
+                    <a href="@Waze(Model.OrigemLatitude, Model.OrigemLongitude)" target="_blank" rel="noopener" class="btn btn-outline-primary">Waze até a origem</a>
+                    <a href="@Waze(Model.DestinoLatitude, Model.DestinoLongitude)" target="_blank" rel="noopener" class="btn btn-outline-primary">Waze até o destino</a>
+                }
+                <form asp-action="Cancelar" asp-route-id="@Model.ID" method="post">
+                    <button type="submit" class="btn btn-outline-secondary">Cancelar corrida</button>
+                </form>
+            </div>
+        }
+
+        <h2 class="h6 text-uppercase text-muted">Itens adicionais</h2>
+        @if (Model.ItensAdicionais.Count == 0)
+        {
+            <p class="text-muted small">Nenhum item.</p>
+        }
+        else
+        {
+            <ul class="list-group mb-3">
+                @foreach (var item in Model.ItensAdicionais)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                        <span>
+                            @item.Tipo @(string.IsNullOrEmpty(item.Descricao) ? "" : $"· {item.Descricao}")
+                            <span class="d-block small text-muted">@item.Valor.ToString("C") · @(item.Incluso ? "incluído no preço" : "cobrado à parte")</span>
+                        </span>
+                        @if (ehMotorista && aberta)
+                        {
+                            <form asp-action="RemoverItem" asp-route-id="@Model.ID" asp-route-idItem="@item.ID" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Remover</button>
+                            </form>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+
+        @if (ehMotorista && aberta)
+        {
+            <form asp-action="AdicionarItem" asp-route-id="@Model.ID" method="post" class="row g-2 mb-3">
+                <div class="col-6 col-md-3">
+                    <select name="Tipo" class="form-select" aria-label="Tipo do item">
+                        @foreach (var tipo in CorridaNegocio.TiposItem)
+                        {
+                            <option value="@tipo">@tipo</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <input name="Valor" class="form-control" inputmode="decimal" placeholder="Valor (R$)" aria-label="Valor" required />
+                </div>
+                <div class="col-12 col-md-6">
+                    <input name="Descricao" class="form-control" maxlength="200" placeholder="Descrição (opcional)" aria-label="Descrição" />
+                </div>
+                <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div class="form-check">
+                        <input type="checkbox" id="Incluso" name="Incluso" value="true" class="form-check-input" checked />
+                        <input type="hidden" name="Incluso" value="false" />
+                        <label for="Incluso" class="form-check-label">Incluído no preço</label>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Adicionar item</button>
+                </div>
+            </form>
+        }
+    </div>
+
+    <div class="col-lg-6">
+        <div id="mapa-corrida" class="mapa mb-3"
+             data-origem-lat="@Numero(Model.OrigemLatitude)" data-origem-lng="@Numero(Model.OrigemLongitude)"
+             data-destino-lat="@Numero(Model.DestinoLatitude)" data-destino-lng="@Numero(Model.DestinoLongitude)"></div>
+        @Html.AntiForgeryToken()
+
+        <h2 class="h6 text-uppercase text-muted">Histórico</h2>
+        <ul class="list-group">
+            @foreach (var historico in Model.HistoricosStatus)
+            {
+                <li class="list-group-item small">
+                    @historico.DataHora.ToString("dd/MM/yyyy HH:mm") · @(historico.StatusNovo)
+                    @if (ehMotorista)
+                    {
+                        <span class="text-muted">por @historico.Usuario.Nome</span>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="~/js/mapa.js" asp-append-version="true"></script>
+}

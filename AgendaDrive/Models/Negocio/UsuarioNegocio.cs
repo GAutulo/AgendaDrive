@@ -1,12 +1,14 @@
 using AgendaDrive.Models.Entidades;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace AgendaDrive.Models.Negocio;
 
-// ESTRUTURA PARA O GUILHERME IMPLEMENTAR (RF01, RF02, RNF06).
-// Siga o padrão da TarifaNegocio: context pelo construtor, métodos async, string? para recusas.
+// Cadastro e login (RF01, RF02). A senha nunca é guardada: só o hash gerado pelo PasswordHasher.
 public class UsuarioNegocio
 {
     private readonly AgendaDriveContext _contexto;
+    private readonly PasswordHasher<Usuario> _hasher = new();
 
     public UsuarioNegocio(AgendaDriveContext contexto)
     {
@@ -14,23 +16,50 @@ public class UsuarioNegocio
     }
 
     // Devolve null se deu certo, ou o motivo da recusa.
-    // TODO:
-    // - normalizar o e-mail (Trim + minúsculas) antes de comparar e gravar;
-    // - recusar e-mail que já exista;
-    // - gerar SenhaHash com PasswordHasher<Usuario>.HashPassword (nunca guardar a senha);
-    // - Papel SEMPRE "Usuario": nunca vem do formulário, senão qualquer um vira Administrador.
-    public Task<string?> CadastrarAsync(string nome, string email, string? telefone, string senha)
+    public async Task<string?> CadastrarAsync(string nome, string email, string? telefone, string senha)
     {
-        throw new NotImplementedException();
+        var emailNormalizado = NormalizarEmail(email);
+
+        if (await _contexto.Usuarios.AnyAsync(u => u.Email == emailNormalizado))
+            return "Este e-mail já está cadastrado.";
+
+        // Papel fixo: nunca vem do formulário, senão qualquer pessoa viraria Administrador.
+        var usuario = new Usuario
+        {
+            Nome = nome.Trim(),
+            Email = emailNormalizado,
+            Telefone = string.IsNullOrWhiteSpace(telefone) ? null : telefone.Trim(),
+            Papel = "Usuario"
+        };
+        usuario.SenhaHash = _hasher.HashPassword(usuario, senha);
+
+        _contexto.Usuarios.Add(usuario);
+        await _contexto.SaveChangesAsync();
+        return null;
     }
 
-    // Devolve o usuário se e-mail e senha conferem, ou null.
-    // TODO:
-    // - buscar pelo e-mail normalizado e só usuário Ativo;
-    // - conferir com PasswordHasher<Usuario>.VerifyHashedPassword;
-    // - usar a MESMA resposta para "e-mail não existe" e "senha errada" (não revelar quem tem conta).
-    public Task<Usuario?> AutenticarAsync(string email, string senha)
+    // Devolve o usuário se e-mail e senha conferem. O Controller mostra a mesma mensagem
+    // para "e-mail não existe" e "senha errada", para não revelar quem tem conta.
+    public async Task<Usuario?> AutenticarAsync(string email, string senha)
     {
-        throw new NotImplementedException();
+        var emailNormalizado = NormalizarEmail(email);
+        var usuario = await _contexto.Usuarios.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Email == emailNormalizado && u.Ativo);
+
+        if (usuario == null)
+            return null;
+
+        try
+        {
+            var resultado = _hasher.VerifyHashedPassword(usuario, usuario.SenhaHash, senha);
+            return resultado == PasswordVerificationResult.Failed ? null : usuario;
+        }
+        catch (FormatException)
+        {
+            // Os usuários de exemplo do script têm um texto no lugar do hash: não entram.
+            return null;
+        }
     }
+
+    private static string NormalizarEmail(string email) => email.Trim().ToLowerInvariant();
 }
