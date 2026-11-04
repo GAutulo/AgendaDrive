@@ -55,9 +55,19 @@ try {
     # O csproj nao publica App_Secrets; aqui entra o arquivo de producao, com ConvertTo-Json escapando o que precisar.
     $pastaSegredos = Join-Path $pacote 'App_Secrets'
     New-Item -ItemType Directory -Path $pastaSegredos | Out-Null
+    # A chave de rotas vem do secrets.json local; sem ela o site sobe, mas pedido de corrida nao funciona.
+    $chaveRotas = ''
+    $segredosLocais = Join-Path $raiz 'AgendaDrive\App_Secrets\secrets.json'
+    if (Test-Path $segredosLocais) {
+        $chaveRotas = [string](Get-Content $segredosLocais -Raw -Encoding UTF8 | ConvertFrom-Json).OpenRouteService.Chave
+    }
+    if (-not $chaveRotas.Trim()) {
+        Write-Host 'Aviso: sem chave do OpenRouteService. Enderecos, cotacao e pedido de corrida nao vao funcionar.' -ForegroundColor Yellow
+    }
+
     $segredos = @{
         ConnectionStrings = @{ AgendaDrive = $ConnectionString.Trim() }
-        OpenRouteService  = @{ Chave = '' }
+        OpenRouteService  = @{ Chave = $chaveRotas.Trim() }
     } | ConvertTo-Json
     [IO.File]::WriteAllText((Join-Path $pastaSegredos 'secrets.json'), $segredos, (New-Object Text.UTF8Encoding $false))
 
@@ -78,19 +88,23 @@ finally {
     $ConnectionString = $null
 }
 
-# Teste real: a pagina de Tarifas so mostra "Ativa" se site, secrets.json e banco estiverem funcionando.
+# Teste real: tenta entrar com uma conta que nao existe. "incorretos" so aparece
+# se site, chaves de login, secrets.json e banco estiverem funcionando; falha no banco daria erro 500.
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$url = $endereco.TrimEnd('/') + '/Tarifas'
+$url = ($endereco.TrimEnd('/') -replace '^http:', 'https:') + '/Conta/Entrar'
 Write-Host "Testando $url ..."
 foreach ($tentativa in 1..6) {
     Start-Sleep -Seconds 10
     try {
-        $resposta = Invoke-WebRequest $url -UseBasicParsing -TimeoutSec 60
-        if ($resposta.Content -match 'text-bg-success') {
+        $pagina = Invoke-WebRequest $url -UseBasicParsing -SessionVariable sessao -TimeoutSec 60
+        $token = [regex]::Match($pagina.Content, 'name="__RequestVerificationToken"[^>]*value="([^"]+)"').Groups[1].Value
+        $campos = @{ Email = 'teste@example.invalid'; Senha = 'senha-invalida'; __RequestVerificationToken = $token }
+        $resposta = Invoke-WebRequest $url -Method Post -Body $campos -WebSession $sessao -UseBasicParsing -TimeoutSec 60
+        if ($resposta.Content -match 'incorretos') {
             Write-Host "NO AR: $url" -ForegroundColor Green
             exit 0
         }
-        Write-Host "Tentativa ${tentativa}: a pagina abriu, mas sem tarifa ativa."
+        Write-Host "Tentativa ${tentativa}: a pagina abriu, mas o login nao respondeu como esperado."
     }
     catch {
         Write-Host "Tentativa ${tentativa}: $($_.Exception.Message)"

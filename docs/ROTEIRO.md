@@ -4,10 +4,10 @@ O sistema inteiro foi escrito como base, com autorização do professor para se 
 
 ## Falta fazer (só você consegue)
 
-1. **Chave do OpenRouteService:** crie a conta em https://openrouteservice.org, gere a chave e coloque em `OpenRouteService:Chave`, no `App_Secrets/secrets.json` local e no de produção. Sem ela, sugestão de endereços, cotação e pedido de corrida não funcionam. Esse caminho só foi testado contra um servidor simulado; o primeiro teste com o serviço real é seu.
+1. **Chave do OpenRouteService:** já está no `App_Secrets/secrets.json` local e o `publicar-hospedagem.ps1` a leva para produção. Sugestão de endereços e cotação foram testadas localmente com o serviço real; falta testar no site publicado.
 2. **Conta de motorista:** os usuários do script não conseguem entrar (têm um texto no lugar do hash). Cadastre sua conta pelo site e promova uma única vez, no Run T-SQL do painel e também no banco local:
    `update Usuarios set Papel = 'Administrador' where Email = 'seu@email';`
-3. **Publicar:** depois da 3ª medição, rode `publicar-hospedagem.ps1`. Depois disso, `/Tarifas` passa a exigir login de motorista.
+3. **Publicar:** feito em 04/11, a partir da branch `4a-medicao`. Para republicar, rode `publicar-hospedagem.ps1`. `/Tarifas` agora exige login de motorista.
 4. **Testar no celular de verdade**, com o site publicado.
 5. **Decidir as pendências de negócio** e pedir a implementação:
    - antecedência mínima para o cliente cancelar (hoje pode cancelar a qualquer momento);

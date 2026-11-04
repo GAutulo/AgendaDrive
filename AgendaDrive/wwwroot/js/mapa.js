@@ -80,9 +80,9 @@
         function mostrarResumo(cotacao) {
             var linhas = [
                 ['Tarifa-base', cotacao.valorBase],
-                [cotacao.distanciaKm + ' km de corrida', cotacao.valorDistancia],
+                [cotacao.distanciaKm.toLocaleString('pt-BR') + ' km de corrida', cotacao.valorDistancia],
                 [cotacao.duracaoMin + ' min de corrida', cotacao.valorTempo],
-                [cotacao.deslocamentoKm + ' km de deslocamento', cotacao.valorDeslocamento]
+                [cotacao.deslocamentoKm.toLocaleString('pt-BR') + ' km de deslocamento', cotacao.valorDeslocamento]
             ];
             var tabela = document.createElement('table');
             tabela.className = 'table table-sm mb-0';
