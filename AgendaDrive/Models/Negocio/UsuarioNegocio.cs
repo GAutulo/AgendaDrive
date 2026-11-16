@@ -1,5 +1,6 @@
 using AgendaDrive.Models.Entidades;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace AgendaDrive.Models.Negocio;
@@ -34,7 +35,16 @@ public class UsuarioNegocio
         usuario.SenhaHash = _hasher.HashPassword(usuario, senha);
 
         _contexto.Usuarios.Add(usuario);
-        await _contexto.SaveChangesAsync();
+        try
+        {
+            await _contexto.SaveChangesAsync();
+        }
+        catch (DbUpdateException erro) when (erro.InnerException is SqlException { Number: 2627 or 2601 })
+        {
+            // Dois envios do mesmo formulário ao mesmo tempo (clique duplo): os dois passam pela
+            // verificação acima, mas o índice único do banco só deixa o primeiro gravar.
+            return "Este e-mail já está cadastrado.";
+        }
         return null;
     }
 
