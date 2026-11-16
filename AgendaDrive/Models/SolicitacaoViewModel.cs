@@ -60,7 +60,7 @@ public class SolicitacaoViewModel
 }
 
 // Entrada de POST /api/cotacoes.
-public record CotacaoRequisicao([Required] Coordenada Origem, [Required] Coordenada Destino);
+public record CotacaoRequisicao([Required] Coordenada Origem, [Required] Coordenada Destino, bool Intermunicipal = false);
 
 // Saída da API de corridas: só os campos públicos, sem dados de outros usuários.
 public record CorridaResumo(

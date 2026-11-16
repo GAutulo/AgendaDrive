@@ -5,7 +5,7 @@
 
 <h1 class="h3 mb-3">Editar tarifa nº @Model.ID</h1>
 
-<form asp-action="Editar" asp-route-id="@Model.ID" method="post">
+<form asp-action="Editar" asp-route-id="@Model.ID" method="post" class="painel form-pagina">
     <partial name="_Formulario" model="Model" />
     <div class="d-flex gap-2">
         <button type="submit" class="btn btn-primary">Salvar</button>

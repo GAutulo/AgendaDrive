@@ -13,6 +13,8 @@ public record Cotacao(
     decimal ValorDistancia,
     decimal ValorTempo,
     decimal ValorDeslocamento,
+    decimal RetornoKm,
+    decimal ValorRetorno,
     decimal PrecoMinimo,
     decimal PrecoEstimado,
     string RotaGeoJson);
@@ -42,8 +44,12 @@ public class PrecoNegocio
         return Math.Round(Math.Max(subtotal, tarifa.PrecoMinimo), 2, MidpointRounding.AwayFromZero);
     }
 
+    // Retorno vazio em viagem para outra cidade: o motorista volta sem passageiro até o ponto de partida,
+    // e o cliente paga metade do valor por km dessa volta.
+    public const decimal PercentualRetornoVazio = 0.5m;
+
     // null quando não há tarifa ativa ou o serviço de rotas falhou: nenhuma cotação é exibida (RN07).
-    public async Task<Cotacao?> CotarAsync(Coordenada origem, Coordenada destino)
+    public async Task<Cotacao?> CotarAsync(Coordenada origem, Coordenada destino, bool intermunicipal = false)
     {
         var tarifa = await _tarifaNegocio.ObterAtivaAsync();
         if (tarifa == null)
@@ -56,6 +62,17 @@ public class PrecoNegocio
         if (deslocamento == null || corrida == null)
             return null;
 
+        decimal retornoKm = 0, valorRetorno = 0;
+        if (intermunicipal)
+        {
+            var retorno = await _rotaServico.CalcularRotaAsync(destino, pontoDePartida);
+            if (retorno == null)
+                return null;
+
+            retornoKm = retorno.DistanciaKm;
+            valorRetorno = Math.Round(retornoKm * tarifa.ValorKm * PercentualRetornoVazio, 2, MidpointRounding.AwayFromZero);
+        }
+
         return new Cotacao(
             tarifa.ID,
             corrida.DistanciaKm,
@@ -65,8 +82,10 @@ public class PrecoNegocio
             Math.Round(corrida.DistanciaKm * tarifa.ValorKm, 2, MidpointRounding.AwayFromZero),
             Math.Round(corrida.DuracaoMin * tarifa.ValorMinuto, 2, MidpointRounding.AwayFromZero),
             Math.Round(deslocamento.DistanciaKm * tarifa.ValorKmDeslocamento, 2, MidpointRounding.AwayFromZero),
+            retornoKm,
+            valorRetorno,
             tarifa.PrecoMinimo,
-            CalcularPreco(tarifa, corrida.DistanciaKm, corrida.DuracaoMin, deslocamento.DistanciaKm),
+            CalcularPreco(tarifa, corrida.DistanciaKm, corrida.DuracaoMin, deslocamento.DistanciaKm, valorRetorno),
             corrida.GeoJson);
     }
 }

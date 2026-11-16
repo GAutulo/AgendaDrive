@@ -16,15 +16,18 @@
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h3 mb-0">Corrida nº @Model.ID <partial name="_Status" model="Model.Status" /></h1>
+<div class="cabecalho-pagina">
+    <div>
+        <h1 class="d-flex align-items-center gap-2">Corrida nº @Model.ID <partial name="_Status" model="Model.Status" /></h1>
+        <p>@Model.DataHora.ToString("dddd, dd 'de' MMMM 'às' HH:mm")</p>
+    </div>
     <a asp-action="@(ehMotorista ? "Solicitacoes" : "Minhas")" class="btn btn-outline-secondary">Voltar</a>
 </div>
 
-<div class="row g-3">
+<div class="row g-4">
     <div class="col-lg-6">
         <div class="card mb-3">
-            <div class="card-body">
+            <div class="card-body p-4">
                 <dl class="mb-0">
                     <dt>Data e hora</dt>
                     <dd>@Model.DataHora.ToString("dd/MM/yyyy HH:mm")</dd>
@@ -35,7 +38,7 @@
                     <dt>Trajeto</dt>
                     <dd>@Model.DistanciaKm.ToString("0.##") km, cerca de @Model.DuracaoMin min@(Model.Intermunicipal ? " (outra cidade)" : "")</dd>
                     <dt>Preço estimado</dt>
-                    <dd class="fs-5 mb-0">@Model.PrecoEstimado.ToString("C")</dd>
+                    <dd class="mb-0"><span class="preco-destaque">@Model.PrecoEstimado.ToString("C")</span></dd>
                     @if (!string.IsNullOrEmpty(Model.Observacoes))
                     {
                         <dt class="mt-2">Observações</dt>
@@ -73,9 +76,16 @@
                     <a href="@Waze(Model.OrigemLatitude, Model.OrigemLongitude)" target="_blank" rel="noopener" class="btn btn-outline-primary">Waze até a origem</a>
                     <a href="@Waze(Model.DestinoLatitude, Model.DestinoLongitude)" target="_blank" rel="noopener" class="btn btn-outline-primary">Waze até o destino</a>
                 }
-                <form asp-action="Cancelar" asp-route-id="@Model.ID" method="post">
-                    <button type="submit" class="btn btn-outline-secondary">Cancelar corrida</button>
-                </form>
+                @if (ehMotorista || CorridaNegocio.ClientePodeCancelar(Model))
+                {
+                    <form asp-action="Cancelar" asp-route-id="@Model.ID" method="post">
+                        <button type="submit" class="btn btn-outline-secondary">Cancelar corrida</button>
+                    </form>
+                }
+                else
+                {
+                    <p class="small text-muted mb-0">O cancelamento só é possível até @CorridaNegocio.AntecedenciaCancelamentoHoras horas antes. Fale com o motorista.</p>
+                }
             </div>
         }
 
@@ -91,7 +101,7 @@
                 {
                     <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
                         <span>
-                            @item.Tipo @(string.IsNullOrEmpty(item.Descricao) ? "" : $"· {item.Descricao}")
+                            @CorridaNegocio.NomeItem(item.Tipo) @(string.IsNullOrEmpty(item.Descricao) ? "" : $"· {item.Descricao}")
                             <span class="d-block small text-muted">@item.Valor.ToString("C") · @(item.Incluso ? "incluído no preço" : "cobrado à parte")</span>
                         </span>
                         @if (ehMotorista && aberta)
@@ -112,7 +122,7 @@
                     <select name="Tipo" class="form-select" aria-label="Tipo do item">
                         @foreach (var tipo in CorridaNegocio.TiposItem)
                         {
-                            <option value="@tipo">@tipo</option>
+                            <option value="@tipo">@CorridaNegocio.NomeItem(tipo)</option>
                         }
                     </select>
                 </div>

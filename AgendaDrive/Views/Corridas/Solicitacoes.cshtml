@@ -8,10 +8,15 @@
     var total = Model.Where(c => c.Status is "Confirmada" or "Concluida").Sum(c => c.PrecoEstimado);
 }
 
-<h1 class="h3 mb-3">Corridas</h1>
+<div class="cabecalho-pagina">
+    <div>
+        <h1>Solicitações</h1>
+        <p>Todas as corridas, com filtro por situação e período.</p>
+    </div>
+</div>
 
 @* Formulário GET: o filtro só lê dados, então fica na URL e não precisa de token. *@
-<form asp-action="Solicitacoes" method="get" class="row g-2 mb-3">
+<form asp-action="Solicitacoes" method="get" class="painel row g-3 mx-0 mb-3">
     <div class="col-12 col-md-3">
         <label for="status" class="form-label">Situação</label>
         <select id="status" name="status" class="form-select">
@@ -37,11 +42,14 @@
 
 @if (Model.Count == 0)
 {
-    <div class="alert alert-info">Nenhuma corrida encontrada.</div>
+    <div class="painel vazio">
+        <strong>Nenhuma corrida encontrada</strong>
+        Mude o filtro ou o período para ver outras corridas.
+    </div>
 }
 else
 {
-    <div class="table-responsive">
+    <div class="painel painel-tabela table-responsive">
         <table class="table table-hover align-middle">
             <thead>
                 <tr>
@@ -50,23 +58,24 @@ else
                     <th class="d-none d-md-table-cell">Cliente</th>
                     <th class="d-none d-lg-table-cell">Trajeto</th>
                     <th class="text-end">Valor</th>
-                    <th></th>
+                    <th class="d-none d-md-table-cell"></th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var corrida in Model)
                 {
                     <tr>
-                        <td>@corrida.DataHora.ToString("dd/MM HH:mm")</td>
+                        @* No celular a coluna "Abrir" some; a data vira o link para os detalhes. *@
+                        <td><a asp-action="Detalhes" asp-route-id="@corrida.ID" class="fw-semibold text-decoration-none">@corrida.DataHora.ToString("dd/MM HH:mm")</a></td>
                         <td><partial name="_Status" model="corrida.Status" /></td>
                         <td class="d-none d-md-table-cell">@corrida.Usuario.Nome</td>
                         <td class="d-none d-lg-table-cell">@corrida.Origem → @corrida.Destino</td>
                         <td class="text-end">@corrida.PrecoEstimado.ToString("C")</td>
-                        <td class="text-end"><a asp-action="Detalhes" asp-route-id="@corrida.ID" class="btn btn-sm btn-outline-secondary">Abrir</a></td>
+                        <td class="text-end d-none d-md-table-cell"><a asp-action="Detalhes" asp-route-id="@corrida.ID" class="btn btn-sm btn-outline-secondary">Abrir</a></td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
-    <p class="text-end"><strong>@Model.Count corrida(s).</strong> Confirmadas e concluídas somam @total.ToString("C").</p>
+    <p class="text-end text-muted mt-3"><strong class="text-body">@Model.Count corrida(s).</strong> Confirmadas e concluídas somam <strong class="text-body">@total.ToString("C")</strong>.</p>
 }

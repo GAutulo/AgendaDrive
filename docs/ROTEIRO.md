@@ -9,11 +9,11 @@ O sistema inteiro foi escrito como base, com autorização do professor para se 
    `update Usuarios set Papel = 'Administrador' where Email = 'seu@email';`
 3. **Publicar:** feito em 04/11, a partir da branch `4a-medicao`. Para republicar, rode `publicar-hospedagem.ps1`. `/Tarifas` agora exige login de motorista.
 4. **Celular de verdade:** testado em 16/11 no site publicado (solicitação, Waze e aprovação funcionando). Tire os prints para o PDF.
-5. **Decidir as pendências de negócio** e pedir a implementação:
-   - antecedência mínima para o cliente cancelar (hoje pode cancelar a qualquer momento);
-   - prazo para o motorista responder (hoje a solicitação fica pendente sem limite);
-   - retorno vazio (hoje o motorista lança manualmente como item adicional);
-   - valores reais de tarifa e o ponto de partida.
+5. **Pendências de negócio:** decididas em 16/11 e implementadas:
+   - o cliente cancela até 2 horas antes; depois disso, só o motorista (`CorridaNegocio.ClientePodeCancelar`);
+   - pedido pendente que chega à hora da corrida vira Recusada (`CorridaNegocio.ExpirarPendentesAsync`);
+   - viagem para outra cidade soma o retorno vazio: km da volta até o ponto de partida × valor/km × 50%, gravado como item adicional (`PrecoNegocio.CotarAsync`).
+   Falta só cadastrar os valores reais de tarifa e o ponto de partida pela tela Tarifas (crie uma tarifa e ative).
 
 ## Onde está cada requisito
 

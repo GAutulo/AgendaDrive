@@ -3,20 +3,24 @@
     ViewData["Title"] = "Bloqueios";
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h3 mb-0">Bloqueios da agenda</h1>
-    <a asp-action="Criar" class="btn btn-primary">Novo bloqueio</a>
+<div class="cabecalho-pagina">
+    <div>
+        <h1>Agenda</h1>
+        <p>Períodos bloqueados: neles o cliente não consegue pedir corridas. O motivo só você vê.</p>
+    </div>
+    <a asp-action="Criar" class="btn btn-primary">Bloquear período</a>
 </div>
-
-<p class="text-muted">Nesses períodos o cliente não consegue solicitar corridas. O motivo só você vê.</p>
 
 @if (Model.Count == 0)
 {
-    <div class="alert alert-info">Nenhum bloqueio ativo.</div>
+    <div class="painel vazio">
+        <strong>Nenhum período bloqueado</strong>
+        Bloqueie horários em que você não pode atender.
+    </div>
 }
 else
 {
-    <div class="table-responsive">
+    <div class="painel painel-tabela table-responsive">
         <table class="table table-hover align-middle">
             <thead>
                 <tr>

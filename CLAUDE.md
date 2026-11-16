@@ -126,9 +126,14 @@ Em 04/11 o professor autorizou, por WhatsApp, o Guilherme a se basear em código
 
 ## Pendências de negócio
 
-Estas decisões são do aluno; não invente valores:
+Estas decisões são do aluno; não invente valores. Decididas em 16/11:
 
-- Valores reais de tarifa e o endereço do ponto de partida do motorista.
-- A regra de retorno vazio em viagens intermunicipais.
-- O prazo para o motorista responder uma solicitação.
-- A política de cancelamento.
+- Cancelamento: o cliente cancela até 2 horas antes; depois, só o motorista.
+- Prazo de resposta: pendente que chega à hora da corrida vira Recusada.
+- Retorno vazio (outra cidade): km da volta até o ponto de partida × valor/km × 50%.
+
+Ainda em aberto: valores reais de tarifa e o endereço do ponto de partida (o próprio motorista cadastra pela tela Tarifas).
+
+## Visual
+
+Estilo profissional (o Guilherme rejeitou um visual temático de estrada por parecer amador). Paleta de 3 cores: petróleo `#0B6E79` (ações), tinta `#0F1E2E` (texto e marca), âmbar `#F5A524` (destaque pontual). Fonte única Plus Jakarta Sans (Google Fonts). Cards brancos com borda e sombra suaves, status como etiquetas suaves. Evitar barras laterais coloridas em cards e topbar com ícones. Bootstrap 5 é obrigatório pelo enunciado: não trocar por outra tecnologia de front.

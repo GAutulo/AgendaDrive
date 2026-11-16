@@ -8,11 +8,16 @@
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 }
 
-<h1 class="h3 mb-3">Nova corrida</h1>
+<div class="cabecalho-pagina">
+    <div>
+        <h1>Pedir corrida</h1>
+        <p>Escolha os endereços nas sugestões para ver a rota e o preço estimado.</p>
+    </div>
+</div>
 
 <div class="row g-4">
-    <div class="col-lg-6">
-        <form asp-action="Nova" method="post" id="form-corrida" autocomplete="off">
+    <div class="col-lg-5">
+        <form asp-action="Nova" method="post" id="form-corrida" autocomplete="off" class="painel">
             <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
 
             <div class="mb-3 position-relative">
@@ -41,6 +46,7 @@
             <div class="form-check mb-3">
                 <input asp-for="Intermunicipal" class="form-check-input" />
                 <label asp-for="Intermunicipal" class="form-check-label"></label>
+                <div class="form-text">Inclui o retorno vazio do motorista: metade do valor por km da volta.</div>
             </div>
 
             <div class="mb-3">
@@ -49,15 +55,15 @@
                 <span asp-validation-for="Observacoes" class="text-danger small"></span>
             </div>
 
-            <div id="resumo-preco" class="d-none mb-3"></div>
+            <div id="resumo-preco" class="resumo-preco d-none mb-3" aria-live="polite"></div>
             <div id="aviso-cotacao" class="alert alert-warning d-none" role="alert"></div>
 
-            <button type="submit" id="enviar-corrida" class="btn btn-primary" disabled>Enviar solicitação</button>
+            <button type="submit" id="enviar-corrida" class="btn btn-primary btn-lg w-100" disabled>Enviar solicitação</button>
         </form>
     </div>
-    <div class="col-lg-6">
+    <div class="col-lg-7">
         <div id="mapa" class="mapa"></div>
-        <p class="form-text">O preço é uma estimativa. O motorista confirma a corrida depois de analisar o pedido.</p>
+        <p class="form-text mt-2">O preço é uma estimativa. O motorista confirma a corrida depois de analisar o pedido.</p>
     </div>
 </div>
 

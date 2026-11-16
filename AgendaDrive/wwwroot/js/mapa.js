@@ -16,14 +16,14 @@
         return mapa;
     }
 
-    function cotar(origem, destino) {
+    function cotar(origem, destino, intermunicipal) {
         return fetch('/api/cotacoes', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'RequestVerificationToken': token.value
             },
-            body: JSON.stringify({ origem: origem, destino: destino })
+            body: JSON.stringify({ origem: origem, destino: destino, intermunicipal: !!intermunicipal })
         }).then(function (resposta) {
             if (!resposta.ok) throw new Error('cotacao');
             return resposta.json();
@@ -34,7 +34,7 @@
         camada.clearLayers();
         L.marker([origem.latitude, origem.longitude]).addTo(camada);
         L.marker([destino.latitude, destino.longitude]).addTo(camada);
-        var linha = L.geoJSON(JSON.parse(rotaGeoJson), { style: { color: '#0d6efd', weight: 5 } }).addTo(camada);
+        var linha = L.geoJSON(JSON.parse(rotaGeoJson), { style: { color: '#0B6E79', weight: 5, opacity: .9 } }).addTo(camada);
         mapa.fitBounds(linha.getBounds(), { padding: [24, 24] });
     }
 
@@ -63,6 +63,7 @@
         var aviso = document.getElementById('aviso-cotacao');
         var ocupados = document.getElementById('ocupados');
         var dataHora = document.getElementById('DataHora');
+        var intermunicipal = document.getElementById('Intermunicipal');
 
         // O formulário vai para o servidor em pt-BR, por isso a coordenada usa vírgula nos campos ocultos.
         function lerCoordenada(prefixo) {
@@ -84,6 +85,9 @@
                 [cotacao.duracaoMin + ' min de corrida', cotacao.valorTempo],
                 [cotacao.deslocamentoKm.toLocaleString('pt-BR') + ' km de deslocamento', cotacao.valorDeslocamento]
             ];
+            if (cotacao.valorRetorno > 0) {
+                linhas.push([cotacao.retornoKm.toLocaleString('pt-BR') + ' km de retorno vazio (50%)', cotacao.valorRetorno]);
+            }
             var tabela = document.createElement('table');
             tabela.className = 'table table-sm mb-0';
             var corpo = tabela.createTBody();
@@ -119,7 +123,7 @@
             limparCotacao();
             if (!origem || !destino) return;
 
-            cotar(origem, destino)
+            cotar(origem, destino, intermunicipal.checked)
                 .then(function (cotacao) {
                     desenharRota(mapa, camada, origem, destino, cotacao.rotaGeoJson);
                     mostrarResumo(cotacao);
@@ -203,6 +207,7 @@
         iniciarAutocomplete('Origem');
         iniciarAutocomplete('Destino');
         dataHora.addEventListener('change', atualizarOcupados);
+        intermunicipal.addEventListener('change', atualizarCotacao);
 
         // Depois de um erro de validação, a página volta com os endereços preenchidos.
         atualizarCotacao();

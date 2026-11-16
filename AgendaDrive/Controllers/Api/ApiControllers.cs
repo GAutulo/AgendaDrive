@@ -48,7 +48,7 @@ public class CotacoesApiController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Cotacao>> Cotar(CotacaoRequisicao requisicao)
     {
-        var cotacao = await _precoNegocio.CotarAsync(requisicao.Origem, requisicao.Destino);
+        var cotacao = await _precoNegocio.CotarAsync(requisicao.Origem, requisicao.Destino, requisicao.Intermunicipal);
         if (cotacao == null)
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { erro = "Não foi possível calcular a rota agora." });
 

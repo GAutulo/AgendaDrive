@@ -18,6 +18,14 @@ public class CorridaNegocio
     public static readonly string[] Status = ["Pendente", "Confirmada", "Recusada", "Cancelada", "Concluida"];
     public static readonly string[] TiposItem = ["Pedagio", "Estacionamento", "Espera", "RetornoVazio", "Outro"];
 
+    // Nome mostrado na tela; o banco guarda o valor sem acento de TiposItem.
+    public static string NomeItem(string tipo) => tipo switch
+    {
+        "Pedagio" => "Pedágio",
+        "RetornoVazio" => "Retorno vazio",
+        _ => tipo
+    };
+
     private readonly AgendaDriveContext _contexto;
     private readonly AgendaNegocio _agendaNegocio;
     private readonly PrecoNegocio _precoNegocio;
@@ -38,7 +46,8 @@ public class CorridaNegocio
 
         var cotacao = await _precoNegocio.CotarAsync(
             new Coordenada(dados.OrigemLatitude, dados.OrigemLongitude),
-            new Coordenada(dados.DestinoLatitude, dados.DestinoLongitude));
+            new Coordenada(dados.DestinoLatitude, dados.DestinoLongitude),
+            dados.Intermunicipal);
 
         if (cotacao == null)
             return "Não foi possível calcular a rota agora. Confira os endereços ou tente novamente.";
@@ -70,13 +79,54 @@ public class CorridaNegocio
         };
         corrida.HistoricosStatus.Add(NovoHistorico(null, "Pendente", idUsuario));
 
+        // O retorno vazio vira um item incluso: aparece na corrida e continua no preço quando outros itens mudam.
+        if (cotacao.ValorRetorno > 0)
+        {
+            corrida.ItensAdicionais.Add(new ItemAdicional
+            {
+                Tipo = "RetornoVazio",
+                Descricao = $"{cotacao.RetornoKm:0.##} km de volta × {PrecoNegocio.PercentualRetornoVazio:P0}",
+                Valor = cotacao.ValorRetorno,
+                Incluso = true
+            });
+        }
+
         _contexto.Corridas.Add(corrida);
         await _contexto.SaveChangesAsync();
         return null;
     }
 
+    // Prazo de resposta: se chegou a hora da corrida e o motorista não respondeu, a solicitação
+    // vira Recusada. Roda antes das consultas, então ninguém vê um pedido vencido como Pendente.
+    public async Task ExpirarPendentesAsync()
+    {
+        var agora = Relogio.Agora;
+        if (!await _contexto.Corridas.AnyAsync(c => c.Status == "Pendente" && c.DataHora <= agora))
+            return;
+
+        await _agendaNegocio.ExecutarExclusivoAsync(async () =>
+        {
+            // O histórico exige um usuário: a recusa automática fica em nome do motorista (o primeiro Administrador ativo).
+            var idMotorista = await _contexto.Usuarios
+                .Where(u => u.Papel == "Administrador" && u.Ativo)
+                .OrderBy(u => u.ID)
+                .Select(u => (int?)u.ID)
+                .FirstOrDefaultAsync();
+            if (idMotorista == null)
+                return null;
+
+            var vencidas = await _contexto.Corridas.Where(c => c.Status == "Pendente" && c.DataHora <= agora).ToListAsync();
+            foreach (var corrida in vencidas)
+                MudarStatus(corrida, "Recusada", idMotorista.Value);
+
+            await _contexto.SaveChangesAsync();
+            return null;
+        });
+    }
+
     public async Task<List<Corrida>> ListarDoClienteAsync(int idUsuario)
     {
+        await ExpirarPendentesAsync();
         return await _contexto.Corridas
             .AsNoTracking()
             .Where(c => c.IDUsuario == idUsuario)
@@ -87,6 +137,7 @@ public class CorridaNegocio
     // Visão do motorista, também usada como relatório por período (RF18).
     public async Task<List<Corrida>> ListarAsync(string? status, DateTime? inicio, DateTime? fim)
     {
+        await ExpirarPendentesAsync();
         var consulta = _contexto.Corridas.AsNoTracking().Include(c => c.Usuario).AsQueryable();
 
         if (!string.IsNullOrEmpty(status))
@@ -102,6 +153,7 @@ public class CorridaNegocio
     // Com idUsuario preenchido, só devolve se a corrida for dele: outra pessoa recebe "não encontrada" (RN18).
     public async Task<Corrida?> ObterAsync(int id, int? idUsuario)
     {
+        await ExpirarPendentesAsync();
         return await _contexto.Corridas
             .AsNoTracking()
             .Include(c => c.Usuario)
@@ -120,6 +172,9 @@ public class CorridaNegocio
             if (corrida == null)
                 return "Corrida não encontrada.";
 
+            if (corrida.Status == "Pendente" && corrida.DataHora <= Relogio.Agora)
+                return "Esta solicitação expirou: o horário da corrida já passou.";
+
             var fim = AgendaNegocio.CalcularFim(corrida.DataHora, corrida.DuracaoMin, corrida.Tarifa.MargemSegurancaMin);
             if (corrida.Status == "Pendente" && !await _agendaNegocio.PeriodoLivreAsync(corrida.DataHora, fim, corrida.ID))
                 return "O horário desta corrida não está mais livre. Recuse a solicitação.";
@@ -137,13 +192,21 @@ public class CorridaNegocio
 
     public Task<string?> ConcluirAsync(int id, int idMotorista) => AlterarStatusAsync(id, "Concluida", idMotorista);
 
-    // O cliente só cancela a própria corrida (RN18); o motorista cancela qualquer uma.
-    // A antecedência mínima depende da política de cancelamento, que ainda é uma pendência de negócio.
+    // Política de cancelamento: o cliente cancela até 2 horas antes; depois disso, só o motorista.
+    public const int AntecedenciaCancelamentoHoras = 2;
+
+    public static bool ClientePodeCancelar(Corrida corrida) =>
+        corrida.DataHora - Relogio.Agora >= TimeSpan.FromHours(AntecedenciaCancelamentoHoras);
+
+    // O cliente só cancela a própria corrida (RN18); o motorista cancela qualquer uma, a qualquer momento.
     public async Task<string?> CancelarAsync(int id, int idUsuario, bool ehMotorista)
     {
         var corrida = await _contexto.Corridas.FirstOrDefaultAsync(c => c.ID == id && (ehMotorista || c.IDUsuario == idUsuario));
         if (corrida == null)
             return "Corrida não encontrada.";
+
+        if (!ehMotorista && !ClientePodeCancelar(corrida))
+            return $"O cancelamento só é possível até {AntecedenciaCancelamentoHoras} horas antes da corrida. Fale com o motorista.";
 
         var erro = MudarStatus(corrida, "Cancelada", idUsuario);
         if (erro != null)

@@ -3,28 +3,39 @@
     ViewData["Title"] = "Minhas corridas";
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h3 mb-0">Minhas corridas</h1>
-    <a asp-action="Nova" class="btn btn-primary">Nova corrida</a>
+<div class="cabecalho-pagina">
+    <div>
+        <h1>Minhas corridas</h1>
+        <p>Acompanhe a situação dos seus pedidos.</p>
+    </div>
+    <a asp-action="Nova" class="btn btn-primary">Pedir corrida</a>
 </div>
 
 @if (Model.Count == 0)
 {
-    <div class="alert alert-info">Você ainda não solicitou nenhuma corrida.</div>
+    <div class="painel vazio">
+        <strong>Nenhuma corrida ainda</strong>
+        Peça a primeira e acompanhe aqui a confirmação do motorista.
+        <div class="mt-3"><a asp-action="Nova" class="btn btn-primary">Pedir corrida</a></div>
+    </div>
 }
 else
 {
-    <div class="list-group">
-        @foreach (var corrida in Model)
-        {
-            <a asp-action="Detalhes" asp-route-id="@corrida.ID" class="list-group-item list-group-item-action">
-                <div class="d-flex justify-content-between gap-2">
-                    <strong>@corrida.DataHora.ToString("dd/MM/yyyy HH:mm")</strong>
-                    <partial name="_Status" model="corrida.Status" />
-                </div>
-                <div class="small text-muted">@corrida.Origem → @corrida.Destino</div>
-                <div>@corrida.PrecoEstimado.ToString("C")</div>
-            </a>
-        }
+    <div class="painel painel-tabela">
+        <div class="list-group list-group-flush">
+            @foreach (var corrida in Model)
+            {
+                <a asp-action="Detalhes" asp-route-id="@corrida.ID" class="list-group-item list-group-item-action item-corrida">
+                    <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
+                        <span class="fw-semibold">@corrida.DataHora.ToString("dd/MM/yyyy 'às' HH:mm")</span>
+                        <partial name="_Status" model="corrida.Status" />
+                    </div>
+                    <div class="d-flex justify-content-between align-items-end gap-3">
+                        <span class="small text-muted">@corrida.Origem → @corrida.Destino</span>
+                        <span class="fw-bold text-nowrap">@corrida.PrecoEstimado.ToString("C")</span>
+                    </div>
+                </a>
+            }
+        </div>
     </div>
 }

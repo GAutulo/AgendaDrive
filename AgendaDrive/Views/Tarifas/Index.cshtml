@@ -3,24 +3,25 @@
     ViewData["Title"] = "Tarifas";
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h3 mb-0">Tarifas</h1>
+<div class="cabecalho-pagina">
+    <div>
+        <h1>Tarifas</h1>
+        <p>Só uma tarifa fica ativa por vez; é ela que calcula o preço das novas corridas. Ao ativar uma tarifa, a anterior é desativada.</p>
+    </div>
     <a asp-action="Criar" class="btn btn-primary">Nova tarifa</a>
 </div>
 
-<p class="text-muted">
-    Só uma tarifa fica ativa por vez; é ela que calcula o preço das novas corridas.
-    Ao ativar uma tarifa, a anterior é desativada.
-</p>
-
 @if (Model.Count == 0)
 {
-    <div class="alert alert-info">Nenhuma tarifa cadastrada ainda.</div>
+    <div class="painel vazio">
+        <strong>Nenhuma tarifa cadastrada</strong>
+        Crie uma tarifa e ative-a para os clientes verem o preço.
+    </div>
 }
 else
 {
     @* As colunas menos importantes somem em telas pequenas (d-none d-md-table-cell). *@
-    <div class="table-responsive">
+    <div class="painel painel-tabela table-responsive">
         <table class="table table-hover align-middle">
             <thead>
                 <tr>

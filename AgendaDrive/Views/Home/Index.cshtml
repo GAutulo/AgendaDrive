@@ -2,24 +2,84 @@
     ViewData["Title"] = "Início";
 }
 
-<div class="py-4">
-    <h1 class="display-6 fw-semibold">AgendaDrive</h1>
-    <p class="lead">Agendamento e precificação de corridas particulares.</p>
-    <p class="text-muted">
-        O cliente informa origem e destino, vê a rota no mapa e recebe uma estimativa de preço.
-        O motorista aprova as solicitações, organiza a agenda e configura as tarifas.
-    </p>
-    @if (User.IsInRole("Administrador"))
-    {
-        <a class="btn btn-primary" asp-controller="Corridas" asp-action="Solicitacoes">Ver solicitações</a>
-    }
-    else if (User.Identity?.IsAuthenticated == true)
-    {
-        <a class="btn btn-primary" asp-controller="Corridas" asp-action="Nova">Solicitar corrida</a>
-    }
-    else
-    {
-        <a class="btn btn-primary" asp-controller="Conta" asp-action="Entrar">Entrar</a>
-        <a class="btn btn-outline-primary" asp-controller="Conta" asp-action="Cadastrar">Criar conta</a>
-    }
-</div>
+<section class="capa row g-4 g-lg-5 align-items-center">
+    <div class="col-lg-6">
+        <span class="selo"><span class="selo-ponto"></span>Motorista particular com hora marcada</span>
+        <h1 class="titulo-capa">Sua corrida particular, <em>agendada</em> e com preço claro.</h1>
+        <p class="texto-capa mb-4">
+            Informe a origem e o destino, veja a rota no mapa e o valor estimado antes de pedir.
+            O motorista confirma o horário e você acompanha tudo por aqui.
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+            @if (User.IsInRole("Administrador"))
+            {
+                <a class="btn btn-primary btn-lg" asp-controller="Corridas" asp-action="Solicitacoes">Ver solicitações</a>
+                <a class="btn btn-outline-secondary btn-lg" asp-controller="Bloqueios" asp-action="Index">Abrir a agenda</a>
+            }
+            else if (User.Identity?.IsAuthenticated == true)
+            {
+                <a class="btn btn-primary btn-lg" asp-controller="Corridas" asp-action="Nova">Pedir corrida</a>
+                <a class="btn btn-outline-secondary btn-lg" asp-controller="Corridas" asp-action="Minhas">Minhas corridas</a>
+            }
+            else
+            {
+                <a class="btn btn-primary btn-lg" asp-controller="Conta" asp-action="Cadastrar">Criar conta</a>
+                <a class="btn btn-outline-secondary btn-lg" asp-controller="Conta" asp-action="Entrar">Entrar</a>
+            }
+        </div>
+    </div>
+
+    @* Prévia ilustrativa da tela de cotação (valores de exemplo). *@
+    <div class="col-lg-5 offset-lg-1">
+        <div class="previa" aria-hidden="true">
+            <div class="previa-rota">
+                <span class="previa-ponto"></span>
+                <div>
+                    <div class="previa-rotulo">Origem</div>
+                    <div class="previa-endereco">Rua Amazonas, Centro</div>
+                </div>
+                <span class="previa-linha"></span>
+                <span></span>
+                <span class="previa-ponto fim"></span>
+                <div>
+                    <div class="previa-rotulo">Destino</div>
+                    <div class="previa-endereco">Rodoviária</div>
+                </div>
+            </div>
+            <div class="previa-linhas">
+                <div><span>Tarifa-base</span><span>R$ 5,00</span></div>
+                <div><span>8,4 km de corrida</span><span>R$ 16,80</span></div>
+                <div><span>14 min de corrida</span><span>R$ 2,80</span></div>
+                <div><span>Deslocamento até a origem</span><span>R$ 1,20</span></div>
+            </div>
+            <div class="previa-total">
+                <span class="fw-semibold">Preço estimado</span>
+                <span class="preco-destaque">R$ 25,80</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="recursos row g-3">
+    <div class="col-md-4">
+        <div class="painel recurso">
+            <div class="recurso-numero">1</div>
+            <h2>Escolha origem e destino</h2>
+            <p>Digite os endereços e selecione nas sugestões. A rota aparece no mapa.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="painel recurso">
+            <div class="recurso-numero">2</div>
+            <h2>Confira o preço</h2>
+            <p>O valor estimado vem detalhado: tarifa-base, distância, tempo e deslocamento.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="painel recurso">
+            <div class="recurso-numero">3</div>
+            <h2>Receba a confirmação</h2>
+            <p>O motorista aprova o pedido e o horário fica reservado na agenda dele.</p>
+        </div>
+    </div>
+</section>
