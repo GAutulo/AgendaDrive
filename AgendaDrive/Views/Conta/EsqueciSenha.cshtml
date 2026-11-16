@@ -1,0 +1,43 @@
+@model RedefinirSenhaViewModel
+@{
+    ViewData["Title"] = "Redefinir senha";
+}
+
+<div class="acesso">
+    <div class="painel">
+        <h1>Redefinir senha</h1>
+        <p class="subtitulo">Informe seu e-mail e a palavra-passe que você escolheu no cadastro.</p>
+
+        <form asp-action="EsqueciSenha" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" autocomplete="username" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="PalavraPasse" class="form-label"></label>
+                <input asp-for="PalavraPasse" class="form-control" autocomplete="off" />
+                <span asp-validation-for="PalavraPasse" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="NovaSenha" class="form-label"></label>
+                <input asp-for="NovaSenha" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="NovaSenha" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="ConfirmarSenha" class="form-label"></label>
+                <input asp-for="ConfirmarSenha" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="ConfirmarSenha" class="text-danger small"></span>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 mt-2">Redefinir senha</button>
+        </form>
+    </div>
+    <p class="mt-3 text-center text-muted">
+        Lembrou a senha? <a asp-action="Entrar" class="fw-semibold">Entrar</a>
+    </p>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

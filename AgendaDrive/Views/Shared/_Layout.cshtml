@@ -60,9 +60,11 @@
                     <ul class="navbar-nav align-items-md-center gap-2 mt-2 mt-md-0">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
-                            <li class="nav-item usuario">
-                                <span class="avatar" aria-hidden="true">@iniciais</span>
-                                <span>@nome</span>
+                            <li class="nav-item">
+                                <a class="usuario text-decoration-none" asp-controller="Conta" asp-action="MinhaConta" title="Minha conta">
+                                    <span class="avatar" aria-hidden="true">@iniciais</span>
+                                    <span>@nome</span>
+                                </a>
                             </li>
                             <li class="nav-item">
                                 <form asp-controller="Conta" asp-action="Sair" method="post">

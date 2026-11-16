@@ -22,6 +22,10 @@ public class Usuario
     [StringLength(255)]
     public string SenhaHash { get; set; } = null!;
 
+    // Hash da palavra-passe usada para redefinir a senha (null = o usuário ainda não definiu).
+    [StringLength(255)]
+    public string? PalavraPasseHash { get; set; }
+
     [StringLength(20)]
     public string Papel { get; set; } = null!;
 

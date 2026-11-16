@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using AgendaDrive.Infra;
 using AgendaDrive.Models;
 using AgendaDrive.Models.Negocio;
 using Microsoft.AspNetCore.Authentication;
@@ -71,7 +72,7 @@ public class ContaController : Controller
         if (!ModelState.IsValid)
             return View(modelo);
 
-        var erro = await _usuarioNegocio.CadastrarAsync(modelo.Nome, modelo.Email, modelo.Telefone, modelo.Senha);
+        var erro = await _usuarioNegocio.CadastrarAsync(modelo.Nome, modelo.Email, modelo.Telefone, modelo.Senha, modelo.PalavraPasse);
         if (erro != null)
         {
             ModelState.AddModelError(string.Empty, erro);
@@ -89,6 +90,59 @@ public class ContaController : Controller
     {
         await HttpContext.SignOutAsync();
         return RedirectToAction("Index", "Home");
+    }
+
+    public IActionResult EsqueciSenha()
+    {
+        return View(new RedefinirSenhaViewModel());
+    }
+
+    // Mesmo limite de tentativas do login: impede adivinhar a palavra-passe por força bruta.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [EnableRateLimiting("login")]
+    public async Task<IActionResult> EsqueciSenha(RedefinirSenhaViewModel modelo)
+    {
+        if (!ModelState.IsValid)
+            return View(modelo);
+
+        var erro = await _usuarioNegocio.RedefinirSenhaAsync(modelo.Email, modelo.PalavraPasse, modelo.NovaSenha);
+        if (erro != null)
+        {
+            ModelState.AddModelError(string.Empty, erro);
+            return View(modelo);
+        }
+
+        TempData["Sucesso"] = "Senha redefinida. Entre com a nova senha.";
+        return RedirectToAction(nameof(Entrar));
+    }
+
+    [Authorize]
+    public async Task<IActionResult> MinhaConta()
+    {
+        ViewBag.TemPalavraPasse = await _usuarioNegocio.TemPalavraPasseAsync(User.IdUsuario());
+        return View(new PalavraPasseViewModel());
+    }
+
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    [EnableRateLimiting("login")]
+    public async Task<IActionResult> MinhaConta(PalavraPasseViewModel modelo)
+    {
+        if (ModelState.IsValid)
+        {
+            var erro = await _usuarioNegocio.DefinirPalavraPasseAsync(User.IdUsuario(), modelo.SenhaAtual, modelo.PalavraPasse);
+            if (erro == null)
+            {
+                TempData["Sucesso"] = "Palavra-passe salva. Use-a se esquecer a senha.";
+                return RedirectToAction(nameof(MinhaConta));
+            }
+            ModelState.AddModelError(string.Empty, erro);
+        }
+
+        ViewBag.TemPalavraPasse = await _usuarioNegocio.TemPalavraPasseAsync(User.IdUsuario());
+        return View(modelo);
     }
 
     public IActionResult AcessoNegado()

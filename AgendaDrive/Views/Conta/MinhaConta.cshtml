@@ -1,0 +1,36 @@
+@model PalavraPasseViewModel
+@{
+    ViewData["Title"] = "Minha conta";
+    var temPalavraPasse = (bool)ViewBag.TemPalavraPasse;
+}
+
+<div class="acesso">
+    <div class="painel">
+        <h1>Palavra-passe</h1>
+        <p class="subtitulo">
+            @(temPalavraPasse
+                ? "Você já tem uma palavra-passe. Preencha abaixo para trocá-la."
+                : "Você ainda não tem palavra-passe. Sem ela, não dá para redefinir a senha se você esquecer.")
+        </p>
+
+        <form asp-action="MinhaConta" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+            <div class="mb-3">
+                <label asp-for="SenhaAtual" class="form-label"></label>
+                <input asp-for="SenhaAtual" class="form-control" autocomplete="current-password" />
+                <span asp-validation-for="SenhaAtual" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="PalavraPasse" class="form-label"></label>
+                <input asp-for="PalavraPasse" class="form-control" autocomplete="off" />
+                <div class="form-text">Uma palavra que só você sabe. Maiúsculas não fazem diferença.</div>
+                <span asp-validation-for="PalavraPasse" class="text-danger small"></span>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 mt-2">Salvar palavra-passe</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

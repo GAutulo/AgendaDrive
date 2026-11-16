@@ -15,6 +15,7 @@ create table Usuarios (
     Email nvarchar(150) not null unique,
     Telefone nvarchar(20) null,
     SenhaHash nvarchar(255) not null,
+    PalavraPasseHash nvarchar(255) null,
     Papel nvarchar(20) not null check (Papel in ('Administrador', 'Usuario')),
     Ativo bit not null default 1,
     CriadoEm datetime2 not null default sysdatetime()

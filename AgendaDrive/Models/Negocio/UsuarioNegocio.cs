@@ -17,7 +17,7 @@ public class UsuarioNegocio
     }
 
     // Devolve null se deu certo, ou o motivo da recusa.
-    public async Task<string?> CadastrarAsync(string nome, string email, string? telefone, string senha)
+    public async Task<string?> CadastrarAsync(string nome, string email, string? telefone, string senha, string palavraPasse)
     {
         var emailNormalizado = NormalizarEmail(email);
 
@@ -33,6 +33,7 @@ public class UsuarioNegocio
             Papel = "Usuario"
         };
         usuario.SenhaHash = _hasher.HashPassword(usuario, senha);
+        usuario.PalavraPasseHash = _hasher.HashPassword(usuario, NormalizarPalavraPasse(palavraPasse));
 
         _contexto.Usuarios.Add(usuario);
         try
@@ -70,6 +71,55 @@ public class UsuarioNegocio
             return null;
         }
     }
+
+    // Redefinição de senha: e-mail + palavra-passe certos autorizam gravar a nova senha.
+    // Mesma mensagem para e-mail inexistente, conta sem palavra-passe e palavra-passe errada,
+    // para não revelar quem tem conta (o mesmo cuidado do login).
+    public async Task<string?> RedefinirSenhaAsync(string email, string palavraPasse, string novaSenha)
+    {
+        var emailNormalizado = NormalizarEmail(email);
+        var usuario = await _contexto.Usuarios.FirstOrDefaultAsync(u => u.Email == emailNormalizado && u.Ativo);
+
+        if (usuario == null || !Confere(usuario, usuario.PalavraPasseHash, NormalizarPalavraPasse(palavraPasse)))
+            return "E-mail ou palavra-passe incorretos.";
+
+        usuario.SenhaHash = _hasher.HashPassword(usuario, novaSenha);
+        await _contexto.SaveChangesAsync();
+        return null;
+    }
+
+    // Define ou troca a palavra-passe de quem está logado; exige a senha atual.
+    public async Task<string?> DefinirPalavraPasseAsync(int idUsuario, string senhaAtual, string palavraPasse)
+    {
+        var usuario = await _contexto.Usuarios.FirstOrDefaultAsync(u => u.ID == idUsuario && u.Ativo);
+        if (usuario == null || !Confere(usuario, usuario.SenhaHash, senhaAtual))
+            return "Senha atual incorreta.";
+
+        usuario.PalavraPasseHash = _hasher.HashPassword(usuario, NormalizarPalavraPasse(palavraPasse));
+        await _contexto.SaveChangesAsync();
+        return null;
+    }
+
+    public async Task<bool> TemPalavraPasseAsync(int idUsuario) =>
+        await _contexto.Usuarios.AnyAsync(u => u.ID == idUsuario && u.PalavraPasseHash != null);
+
+    // Compara um texto com um hash; hash ausente ou inválido nunca confere.
+    private bool Confere(Usuario usuario, string? hash, string texto)
+    {
+        if (string.IsNullOrEmpty(hash))
+            return false;
+        try
+        {
+            return _hasher.VerifyHashedPassword(usuario, hash, texto) != PasswordVerificationResult.Failed;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
+
+    // A palavra-passe é lembrada "de cabeça": maiúsculas e espaços nas pontas não contam.
+    private static string NormalizarPalavraPasse(string palavraPasse) => palavraPasse.Trim().ToLowerInvariant();
 
     private static string NormalizarEmail(string email) => email.Trim().ToLowerInvariant();
 }
