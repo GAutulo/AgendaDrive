@@ -101,7 +101,3 @@ Controllers e Views nunca acessam o banco: o `DbContext` é injetado nas classes
 - Credenciais em `App_Secrets`, fora do `wwwroot` e do Git; a chave do mapa nunca vai ao navegador.
 - Toda exceção é gravada em `App_Data/logs`, e o usuário vê só uma página amigável.
 - HTTPS obrigatório com HSTS.
-
-## Uso de IA
-
-O código-base foi gerado com IA (Claude), com autorização do professor, e revisado, testado e corrigido pelo aluno. O histórico das conversas acompanha a entrega final.
