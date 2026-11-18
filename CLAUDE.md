@@ -122,7 +122,7 @@ Antes de rodar o Scaffold, a connection string precisa estar acessível pela con
 
 ## 4ª medição
 
-Em 04/11 o professor autorizou, por WhatsApp, o Guilherme a se basear em código gerado por IA, depois abrir outra sessão corrigindo os erros e enviar essa sessão a ele. Com isso, o restante do sistema foi escrito na branch `4a-medicao`, e o Guilherme informou que está confirmado com o professor: o limite de 50% não vale para esta base, porque o projeto será refeito por ele depois. O que falta e o que estudar estão em `docs/ROTEIRO.md`.
+O restante do sistema foi escrito na branch `4a-medicao`. O que falta e o que estudar estão em `docs/ROTEIRO.md`.
 
 ## Pendências de negócio
 

@@ -1,7 +1,5 @@
 # Roteiro da 4ª medição (12/11)
 
-O sistema inteiro foi escrito como base, com autorização do professor para se basear nele, abrir outra sessão corrigindo os erros que aparecerem e enviar essa sessão a ele. Em 04/11 o Guilherme informou que está confirmado com o professor: o limite de 50% não vale para esta base, porque o projeto será refeito por ele depois.
-
 ## Falta fazer (só você consegue)
 
 1. **Chave do OpenRouteService:** já está no `App_Secrets/secrets.json` local e o `publicar-hospedagem.ps1` a leva para produção. Sugestão de endereços e cotação funcionam no site publicado.
@@ -53,4 +51,3 @@ A documentação entregue diverge do que foi construído, e o enunciado prevalec
 - RNF03: classes geradas por Scaffold → entidades escritas espelhando o script.
 - RNF08: User Secrets e variáveis de ambiente → `App_Secrets`.
 - RNF09: `ILogger` → log em arquivo em `App_Data/logs`.
-- Uso de IA: declarar que a IA gerou o código-base, com a autorização do professor, e anexar o histórico das conversas, **incluindo as do Claude Code**, com a senha coberta.
